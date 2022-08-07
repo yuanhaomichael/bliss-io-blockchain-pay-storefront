@@ -1,4 +1,4 @@
-import Checkout from '../components/Checkout/Checkout'
+import Checkout from "../components/Checkout/Checkout";
 function checkout() {
   return (
     <div>

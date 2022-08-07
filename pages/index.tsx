@@ -9,7 +9,7 @@ function Home() {
   const { publicKey } = useWallet();
   return (
     <div>
-      <Products submitTarget='/checkout' enabled={publicKey !== null} />
+      <Products submitTarget="/checkout" enabled={publicKey !== null} />
     </div>
   );
 }

@@ -1,5 +1,3 @@
-
-
 # storefront
 
 - get react context to work so that cart total amount is updated constantly

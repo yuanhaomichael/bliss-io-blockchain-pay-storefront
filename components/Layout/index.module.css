@@ -1,10 +1,10 @@
 .title {
   color: darkblue;
   margin: auto;
-  text-align: center
+  text-align: center;
 }
 .description {
-  display: flex
+  display: flex;
 }
 .rowElement {
   margin-right: 180px;
