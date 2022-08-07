@@ -29,8 +29,11 @@ function ProductCard({ name, price, description, image }: Props) {
               type="number"
               value={quantity}
               onChange={(e: React.FormEvent<HTMLInputElement>) => {
-                const newValue = e.currentTarget.value;
-                setQuantity(newValue)
+                const newValue = parseInt(e.currentTarget.value);
+                if (newValue < 1) {
+                  setQuantity(1)
+                }
+                else {setQuantity(newValue)}
             }}
             />
             <button
