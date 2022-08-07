@@ -28,14 +28,14 @@ function ProductCard({ name, price, description, image }: Props) {
               className={styles.input}
               type="number"
               value={quantity}
-              onChange={(e) => setQuantity(e.target.value)}
+              onChange={(e: React.FormEvent<HTMLInputElement>) => {
+                const newValue = e.currentTarget.value;
+                setQuantity(newValue)
+            }}
             />
             <button
               className={styles.button}
               type="submit"
-              onSubmit={(e) => {
-                setAmount(amount + e.target.value * price);
-              }}
             >
               Add to Cart
             </button>
