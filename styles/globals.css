@@ -1,26 +1,19 @@
-html,
-body {
-  padding: 0;
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen,
-    Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans-serif;
+html {
+  font-family: 'Courier New', Courier, monospace
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
+h1 {
+  font-size: 50px;
 }
 
-* {
-  box-sizing: border-box;
+h2 {
+  font-size: 25px;
 }
 
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
-  }
-  body {
-    color: white;
-    background: black;
-  }
+p {
+  font-size: 15px;
+}
+
+button {
+  font-family: 'Courier New', Courier, monospace;
 }

@@ -1,0 +1,11 @@
+.title {
+  color: darkblue;
+  margin: auto;
+  text-align: center
+}
+.description {
+  display: flex
+}
+.rowElement {
+  margin-right: 180px;
+}

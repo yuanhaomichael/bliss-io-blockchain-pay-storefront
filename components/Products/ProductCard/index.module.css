@@ -1,0 +1,19 @@
+.container {
+  border: 1px solid red;
+  height: 400px;
+  width: 30%;
+  position: relative;
+  float: left;
+  margin: 10px;
+  align-items: center;
+  text-align: center;
+}
+
+.input {
+  width: 50px;
+  margin-left: 20px;
+}
+
+.button {
+  margin-left: 10px;
+}
