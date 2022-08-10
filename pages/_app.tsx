@@ -13,7 +13,7 @@ import {
   SolflareWalletAdapter,
 } from "@solana/wallet-adapter-wallets";
 require("@solana/wallet-adapter-react-ui/styles.css");
-import { CartContext } from "../lib/hooks/CartProvider";
+import { CartContext } from "../lib/contexts/CartProvider";
 import { useState } from "react";
 
 function MyApp({ Component, pageProps }: AppProps) {

@@ -1,16 +1,15 @@
 import styles from "./index.module.css";
 import productList from "../../lib/productList";
 import ProductCard from "./ProductCard/ProductCard";
-import { useCart } from "../../lib/hooks/CartProvider";
+import { useCart } from "../../lib/contexts/CartProvider";
 import Link from "next/link";
 import { useState } from "react";
 
 interface Props {
   submitTarget: string;
-  enabled: boolean;
 }
 
-function Products({ submitTarget: string, enabled }: Props) {
+function Products({ submitTarget }: Props) {
   const { amount } = useCart();
   const [lineItems, setLineItems] = useState({});
 
@@ -34,7 +33,7 @@ function Products({ submitTarget: string, enabled }: Props) {
       })}
       <Link
         href={{
-          pathname: "/checkout",
+          pathname: amount!==0 ? submitTarget : "/",
           query: { amount: amount, ...lineItems },
         }}
       >

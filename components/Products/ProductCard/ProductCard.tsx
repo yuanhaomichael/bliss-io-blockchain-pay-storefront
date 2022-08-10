@@ -2,7 +2,7 @@ import styles from "./index.module.css";
 import Image from "next/image";
 import React, { useEffect } from "react";
 import { useState } from "react";
-import { useCart } from "../../../lib/hooks/CartProvider";
+import { useCart } from "../../../lib/contexts/CartProvider";
 
 interface Props {
   id: string;
