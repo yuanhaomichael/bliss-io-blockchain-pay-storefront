@@ -2,13 +2,13 @@ import { useRouter } from "next/router";
 import styles from "./index.module.css";
 
 interface props {
-  submitTarget: string; 
-  enabled: boolean; 
+  submitTarget: string;
+  enabled: boolean;
   usd: number;
   sol: number;
 }
 function CheckoutContent({ submitTarget, enabled, usd, sol }: props) {
-  const router = useRouter()
+  const router = useRouter();
   return (
     <div className={styles.container}>
       <form>
@@ -25,20 +25,29 @@ function CheckoutContent({ submitTarget, enabled, usd, sol }: props) {
         <label className={styles.input}>Zipcode</label>
         <input type="number" placeholder="94083"></input>
         {!enabled && <p>Connect your wallet first before placing an order</p>}
-        <br/>
-        <button className={styles.button} onClick={(e) => {
-      e.preventDefault()
-      if(enabled) {
-        router.push({ pathname: submitTarget, query: { pay: "sol" }})
-      }
-    }}>Place Order in Sol: {sol}</button>
-        <button className={styles.button} onClick={(e) => {
-      e.preventDefault()
-      if(enabled) {
-        router.push({ pathname: submitTarget, query: { pay: "usdc" }})
-      }
-    }}>Place Order in USDC: {usd}</button>
-
+        <br />
+        <button
+          className={styles.button}
+          onClick={(e) => {
+            e.preventDefault();
+            if (enabled) {
+              router.push({ pathname: submitTarget, query: { pay: "sol" } });
+            }
+          }}
+        >
+          Place Order in Sol: {sol}
+        </button>
+        <button
+          className={styles.button}
+          onClick={(e) => {
+            e.preventDefault();
+            if (enabled) {
+              router.push({ pathname: submitTarget, query: { pay: "usdc" } });
+            }
+          }}
+        >
+          Place Order in USDC: {usd}
+        </button>
       </form>
     </div>
   );

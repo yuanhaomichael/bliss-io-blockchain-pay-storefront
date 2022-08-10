@@ -1,19 +1,43 @@
-.container {
-  border: 1px solid red;
-  width: auto;
-  margin: 30px;
-  height: 400px;
-  text-align: center;
-}
 .input {
+  margin: 5px;
   display: block;
 }
 .button {
-  display: inline-block;
   margin: auto;
-  margin-left: 50px;
-  margin-top: 20px;
-  width: 180px;
-  height: 50px;
-  font-size: 15px;
+  margin-top: 30px;
+  display: block;
+}
+
+.container {
+  width: auto;
+  margin: 30px;
+  text-align: center;
+  align-items: center;
+}
+
+@media (min-width: 256px) {
+}
+
+@media (min-width: 512px) {
+}
+
+@media (min-width: 1024px) {
+  .container {
+    width: auto;
+    margin: 30px;
+    height: 400px;
+    text-align: center;
+  }
+  .input {
+    display: block;
+  }
+  .button {
+    display: inline-block;
+    margin: auto;
+    margin-left: 50px;
+    margin-top: 20px;
+    width: 180px;
+    height: 50px;
+    font-size: 15px;
+  }
 }

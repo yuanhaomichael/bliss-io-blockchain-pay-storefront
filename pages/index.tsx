@@ -1,10 +1,9 @@
 import Products from "../components/Products/Products";
 
-
 function Home() {
   return (
     <div>
-      <Products submitTarget="/checkout"/>
+      <Products submitTarget="/checkout" />
     </div>
   );
 }

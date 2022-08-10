@@ -33,7 +33,7 @@ function Products({ submitTarget }: Props) {
       })}
       <Link
         href={{
-          pathname: amount!==0 ? submitTarget : "/",
+          pathname: amount !== 0 ? submitTarget : "/",
           query: { amount: amount, ...lineItems },
         }}
       >

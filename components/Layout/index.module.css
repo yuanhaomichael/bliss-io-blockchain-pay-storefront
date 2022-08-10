@@ -12,27 +12,23 @@
   margin-top: 50px;
 }
 
-
 @media (min-width: 256px) {
   .rowElement {
-      margin-right: 150px;
-    }
+    margin-right: 150px;
+  }
 }
 
 @media (min-width: 512px) {
-  
 }
 
 @media (min-width: 1024px) {
-  .description{
+  .description {
     display: flex;
   }
   .button {
+    width: auto;
     margin-bottom: 50px;
-    margin-top: 0px;
-    margin-right: 70px
+    margin-top: 20px;
+    margin-right: 70px;
   }
 }
-
-
-

@@ -1,65 +1,85 @@
 import CheckoutContent from "../components/Checkout/CheckoutContent";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useCart } from "../lib/contexts/CartProvider";
-import { useRouter } from 'next/router'
+import { useRouter } from "next/router";
 import { useEffect, useRef, useState } from "react";
 
 function Checkout() {
-  const { publicKey } = useWallet()
-  const [total, setTotal] = useState(0)
+  const { publicKey } = useWallet();
+  const [total, setTotal] = useState(0);
   const { amount, setAmount } = useCart();
-  const [canOrder, setCanOrder] = useState(false)
-  const router = useRouter()
+  const [canOrder, setCanOrder] = useState(false);
+  const router = useRouter();
   const { query } = router;
-  
-  const [totalSol, setTotalSol] = useState(0)
 
-  async function calculateAmount(){
+  const [totalSol, setTotalSol] = useState(0);
+
+  async function calculateAmount() {
     if (!query) {
-      console.error("query is empty")
-      return
+      console.error("query is empty");
+      return;
     }
     const body = {
-      params: query
-    }
+      params: query,
+    };
     const response = await fetch(`/api/calculateAmount`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json'
+        "Content-Type": "application/json",
+        Accept: "application/json",
       },
       body: JSON.stringify(body),
-    })
-    const json = await response.json()
+    });
+    const json = await response.json();
     if (response.status !== 200) {
       console.error("calculate amount failed", json);
       return;
     }
-    setTotal(parseFloat(json.amount))
-    setTotalSol(parseFloat(json.amountSol))
+    setTotal(parseFloat(json.amount));
+    setTotalSol(parseFloat(json.amountSol));
   }
-  
-  const didMount = useRef(false)
+
+  const didMount = useRef(false);
   useEffect(() => {
-    calculateAmount()
-    console.log("checkout page amount", total, totalSol, "context amount", amount)
-    if(didMount.current){
-          if(totalSol > 0 && total !==0 && total === amount){
-      setCanOrder(true)
-    }
-    setAmount(total)
+    calculateAmount();
+    console.log(
+      "checkout page amount",
+      total,
+      totalSol,
+      "context amount",
+      amount
+    );
+    if (didMount.current) {
+      if (totalSol > 0 && total !== 0 && total === amount) {
+        setCanOrder(true);
+      }
+      setAmount(total);
     } else {
-      didMount.current = true
+      didMount.current = true;
     }
+  }, [
+    () => {
+      return totalSol > 0 && total !== 0 && total === amount;
+    },
+  ]);
 
-  },[()=> {return totalSol > 0 && total !==0 && total === amount}])
-
-  
   return (
     <div>
-      {canOrder ? <CheckoutContent submitTarget="/ordering" enabled={publicKey !== null} usd={total} sol={totalSol}/> : 
-       <CheckoutContent submitTarget="/" enabled={publicKey !== null} usd={total} sol={totalSol}/> 
-      }
+      {canOrder ? (
+        <CheckoutContent
+          submitTarget="/ordering"
+          enabled={publicKey !== null}
+          usd={total}
+          sol={totalSol}
+        />
+      ) : (
+        <CheckoutContent
+          submitTarget="/"
+          enabled={publicKey !== null}
+          usd={total}
+          sol={totalSol}
+        />
+      )}
     </div>
   );
 }

@@ -19,14 +19,13 @@ export default function Layout({ children }: PropsWithChildren<{}>) {
       </Link>
 
       <div className={styles.description}>
-
-
         <p className={styles.rowElement}>
           We accept Sol, USDC, Thank You Points, and NFT coupons
         </p>
         <p className={styles.rowElement}>Cart Total: {amount} USD</p>
-        <div className={styles.button}><WalletMultiButton /></div>
-        
+        <div className={styles.button}>
+          <WalletMultiButton />
+        </div>
       </div>
 
       <main>{children}</main>
