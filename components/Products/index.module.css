@@ -1,8 +1,7 @@
 .container {
-  border: 1px solid red;
-  width: 80%;
+  width: 100%;
   margin: auto;
-  height: 500px;
+  height: auto;
   text-align: center;
   align-items: center;
 }
@@ -11,4 +10,23 @@
   width: 160px;
   height: 50px;
   font-size: 20px;
+  margin-bottom: 50px;
 }
+
+
+@media (min-width: 256px) {
+
+}
+
+@media (min-width: 512px) {
+  
+}
+
+@media (min-width: 1024px) {
+  .container{
+    margin-top: -40px;
+  }
+}
+
+
+

@@ -4,8 +4,34 @@
   text-align: center;
 }
 .description {
-  display: flex;
+  display: block;
 }
-.rowElement {
-  margin-right: 180px;
+
+.button {
+  margin-bottom: 80px;
+  margin-top: 50px;
 }
+
+
+@media (min-width: 256px) {
+  .rowElement {
+      margin-right: 180px;
+    }
+}
+
+@media (min-width: 512px) {
+  
+}
+
+@media (min-width: 1024px) {
+  .description{
+    display: flex;
+  }
+  .button {
+    margin-bottom: 50px;
+    margin-top: 0px;
+  }
+}
+
+
+

@@ -25,7 +25,8 @@ export default function Layout({ children }: PropsWithChildren<{}>) {
           We accept Sol, USDC, Thank You Points, and NFT coupons
         </p>
         <p className={styles.rowElement}>Cart Total: {amount} USD</p>
-        <WalletMultiButton/>
+        <div className={styles.button}><WalletMultiButton /></div>
+        
       </div>
 
       <main>{children}</main>
