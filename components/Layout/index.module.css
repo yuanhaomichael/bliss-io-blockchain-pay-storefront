@@ -15,7 +15,7 @@
 
 @media (min-width: 256px) {
   .rowElement {
-      margin-right: 180px;
+      margin-right: 150px;
     }
 }
 
@@ -30,6 +30,7 @@
   .button {
     margin-bottom: 50px;
     margin-top: 0px;
+    margin-right: 70px
   }
 }
 
