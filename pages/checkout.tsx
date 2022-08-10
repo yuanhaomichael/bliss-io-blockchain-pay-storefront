@@ -71,6 +71,7 @@ function Checkout() {
           enabled={publicKey !== null}
           usd={total}
           sol={totalSol}
+          canOrder={canOrder}
         />
       ) : (
         <CheckoutContent
@@ -78,6 +79,7 @@ function Checkout() {
           enabled={publicKey !== null}
           usd={total}
           sol={totalSol}
+          canOrder={canOrder}
         />
       )}
     </div>

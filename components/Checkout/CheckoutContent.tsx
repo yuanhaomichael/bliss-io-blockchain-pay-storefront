@@ -6,8 +6,9 @@ interface props {
   enabled: boolean;
   usd: number;
   sol: number;
+  canOrder: boolean;
 }
-function CheckoutContent({ submitTarget, enabled, usd, sol }: props) {
+function CheckoutContent({ submitTarget, enabled, usd, sol, canOrder }: props) {
   const router = useRouter();
   return (
     <div className={styles.container}>
@@ -35,7 +36,7 @@ function CheckoutContent({ submitTarget, enabled, usd, sol }: props) {
             }
           }}
         >
-          Place Order in Sol: {sol}
+          Place Order in Sol: {canOrder ? sol : "(loading...)"}
         </button>
         <button
           className={styles.button}
@@ -46,7 +47,7 @@ function CheckoutContent({ submitTarget, enabled, usd, sol }: props) {
             }
           }}
         >
-          Place Order in USDC: {usd}
+          Place Order in USDC: {canOrder ? usd : "(loading...)"}
         </button>
       </form>
     </div>

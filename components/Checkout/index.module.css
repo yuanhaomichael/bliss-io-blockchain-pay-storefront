@@ -24,8 +24,10 @@
 @media (min-width: 1024px) {
   .container {
     width: auto;
-    margin: 30px;
-    height: 400px;
+    margin: auto;
+    margin-top: -30px;
+    margin-bottom: 80px;
+    height: auto;
     text-align: center;
   }
   .input {
