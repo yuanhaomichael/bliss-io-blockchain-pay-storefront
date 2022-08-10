@@ -10,11 +10,12 @@
 .button {
   margin-bottom: 80px;
   margin-top: 50px;
+  
 }
 
 @media (min-width: 256px) {
   .rowElement {
-    margin-right: 150px;
+    margin-right: 40px;
   }
 }
 
@@ -26,9 +27,9 @@
     display: flex;
   }
   .button {
-    width: auto;
     margin-bottom: 50px;
     margin-top: 20px;
-    margin-right: 70px;
+    margin-left: 100px;
+    float: right !important;
   }
 }

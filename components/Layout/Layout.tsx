@@ -9,7 +9,7 @@ import Link from "next/link";
 export default function Layout({ children }: PropsWithChildren<{}>) {
   const { amount } = useCart();
   return (
-    <div>
+    <div className={styles.container}>
       <Head>
         <title>Blockshop</title>
         <link rel="icon" href="/favicon.ico" />
