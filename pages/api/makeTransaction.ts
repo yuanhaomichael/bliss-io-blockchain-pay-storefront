@@ -54,6 +54,7 @@ export default async function handler(
       req.body as makeTransactionInputData;
     const merchantAccount = process.env.MERCHANT_WALLET_ADDR;
     const amount = parseTotal(total);
+    // c
 
     if (amount.toNumber() === 0) {
       res.status(400).json({ error: "can't checkout with total of 0" });
