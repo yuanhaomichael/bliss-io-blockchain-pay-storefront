@@ -1,10 +1,9 @@
 import React from 'react';
-import Confirmation from '../components/Checkout/Confirmation';
 
 function Confirmed() {
   return (
     <div>
-      <Confirmation/>
+      confirmed payment. Thank you.
     </div>
   );
 }

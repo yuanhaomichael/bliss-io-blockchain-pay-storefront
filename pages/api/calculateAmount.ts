@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { ParsedUrlQuery } from "querystring";
 import products from "../../lib/productList";
+import { getSymbolUsdValue } from "../../lib/getSymbolUsdValue";
 
 export type input = {
   params: ParsedUrlQuery
@@ -28,8 +29,8 @@ export default async function handler(
   }
 
   try {
-    const solToUsd = await convertToSol();
-    const tmpSol = tmp/parseFloat(solToUsd as string)
+    const solToUsd = await getSymbolUsdValue('sol');
+    const tmpSol = tmp/solToUsd
     if(solToUsd){
       res.status(200).json({amount: tmp, amountSol: Math.round(tmpSol * 1000) / 1000})
     }
@@ -40,19 +41,3 @@ export default async function handler(
 
 }
 
-async function convertToSol() {
-  const apiKey = process.env.CRYPTO_COMPARE_API_KEY;
-  const urlFirst = "https://min-api.cryptocompare.com/data/price?fsym=";
-  const urlSecond = "&tsyms=";
-  const symbol = 'sol'
-
-  const url = urlFirst + symbol + urlSecond + 'USD&api_key=' + apiKey;
-
-  const response = await fetch(url);
-  var json = await JSON.parse(await response.text())
-  var price = json["USD"] 
-  if(price===undefined){
-    throw new Error("sol to usd price undefined")
-  }
-  return await price
-}

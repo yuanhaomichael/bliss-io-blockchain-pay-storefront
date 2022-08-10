@@ -1,4 +1,5 @@
 import { WalletAdapterNetwork } from "@solana/wallet-adapter-base";
+import { createTransferCheckedInstruction, getAssociatedTokenAddress, getMint } from "@solana/spl-token"
 import { NextApiRequest, NextApiResponse } from "next";
 import { clusterApiUrl, Connection, PublicKey, SystemProgram, LAMPORTS_PER_SOL, Transaction } from "@solana/web3.js";
 import BigNumber from "bignumber.js";
@@ -7,6 +8,7 @@ export type makeTransactionInputData = {
   customerAccount: string,
   total: number,
   txRef: string
+  currency: string
 }
 
 export type makeTransactionOutputData = {
@@ -39,7 +41,7 @@ export default async function handler(
 ) {
   try {
     // parse request
-    const { total, customerAccount, txRef } = req.body as makeTransactionInputData;
+    const { total, customerAccount, txRef, currency } = req.body as makeTransactionInputData;
     const merchantAccount = extractAddr("MERCHANT_WALLET_ADDR");
     const amount = parseTotal(total);
 
@@ -69,18 +71,38 @@ export default async function handler(
     const connection = new Connection(endpoint)
     const { blockhash } = await connection.getLatestBlockhash("confirmed");
 
+    // get usdc addresses and mint
+    const usdcAddr = new PublicKey(extractAddr("USDC_ADDR") as string);
+    const usdcMint = await getMint(connection, new PublicKey(usdcAddr));
+    const customerUsdcAddr = await getAssociatedTokenAddress(usdcAddr as PublicKey, customerAddr);
+    const merchantUsdcAddr = await getAssociatedTokenAddress(usdcAddr as PublicKey, merchantAddr)
+
     // create a Transaction
     const newTx = new Transaction({
       recentBlockhash: blockhash,
       feePayer: customerAddr
     })
 
-    // create Transaction instruction
-    const transferIx = SystemProgram.transfer({
-      fromPubkey: customerAddr,
-      lamports: amount.multipliedBy(LAMPORTS_PER_SOL).toNumber(),
-      toPubkey: merchantAddr
-    })
+    let transferIx = null;
+    if(currency === "sol"){
+      // create Transaction instruction for sol
+      transferIx = SystemProgram.transfer({
+        fromPubkey: customerAddr,
+        lamports: amount.multipliedBy(LAMPORTS_PER_SOL).toNumber(),
+        toPubkey: merchantAddr
+      })
+    } else {
+      // Create the instruction to send USDC from the buyer to the shop
+      transferIx = createTransferCheckedInstruction(
+        customerUsdcAddr, // source
+        usdcAddr, // mint (token address)
+        merchantUsdcAddr, // destination
+        customerAddr, // owner of source address
+        amount.toNumber() * (10 ** (await usdcMint).decimals), // amount to transfer (in units of the USDC token)
+        usdcMint.decimals, // decimals of the USDC token
+      )
+    }
+
 
     // add instruction to Transaction and serialize it
     transferIx.keys.push({

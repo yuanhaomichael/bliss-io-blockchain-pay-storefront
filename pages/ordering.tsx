@@ -4,7 +4,8 @@ import { useCart } from "../lib/contexts/CartProvider";
 import { useEffect, useRef , useMemo, useState } from "react";
 import { makeTransactionInputData, makeTransactionOutputData } from "./api/makeTransaction";
 import { findReference, FindReferenceError } from "@solana/pay";
-import { useRouter, Router } from "next/router";
+import { useRouter } from "next/router";
+import { getSymbolUsdValue } from "../lib/getSymbolUsdValue";
 
 function Ordering() {
   const { publicKey, sendTransaction } = useWallet();
@@ -22,22 +23,24 @@ function Ordering() {
 
   const [transaction, setTransaction] = useState<Transaction | null>(null);
   const [message, setMessage] = useState<string | null>(null);  
-
+  const [amountSol, setAmountSol] = useState(0);
   const { amount } = useCart(); 
   console.log("amount", amount)
 
   const reference = useMemo(() => Keypair.generate().publicKey, []);
   console.log("ref", reference)
 
-  async function getTransaction() {
+
+  async function getTransaction(amount: number, amountSol: number) {
     if (!publicKey) {
       return;
     }
 
     const body: makeTransactionInputData = {
       customerAccount: publicKey.toString(),
-      total: amount,
-      txRef: reference.toString()
+      total: payMethod === "sol" ? amountSol : amount,
+      txRef: reference.toString(),
+      currency: payMethod
     }
 
     const response = await fetch(`/api/makeTransaction`, {
@@ -62,9 +65,23 @@ function Ordering() {
     console.log(transaction);
   }
 
+  // createTx call, depending on when sol amount is avail
+  const didMount0 = useRef(false);
   useEffect(() => {
-    getTransaction()
-  }, [publicKey])
+    const getSolToUsd = async () => {
+      const solToUsd = await getSymbolUsdValue('sol')
+      const tmp = amount / solToUsd
+      setAmountSol(Math.round(tmp * 1000) / 1000)
+    }
+    getSolToUsd()
+    if (didMount0.current) {
+      console.log("before getting tx:", amount, amountSol)
+      getTransaction(amount, amountSol)
+    } else {
+      didMount0.current = true
+    }
+    
+  }, [amountSol])
 
   // send the tx
   async function trySendTx() {
@@ -79,13 +96,13 @@ function Ordering() {
     }
   }
 
-  const didMount = useRef(false);
-
+  // trySendTx call, depending on whether tx is avail
+  const didMount1 = useRef(false);
   useEffect(() => {
-    if (didMount.current) {
+    if (didMount1.current) {
       trySendTx()
     } else {
-      didMount.current = true;
+      didMount1.current = true;
     }
   }, [transaction]);
 
@@ -94,7 +111,7 @@ function Ordering() {
     const interval = setInterval(async () => {
       try {
         const tx = await findReference(connection, reference)
-        Router.push('/confirmed')
+        router.push('/confirmed')
       }
       catch (e) {
         if (e instanceof FindReferenceError) {
