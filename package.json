@@ -4,8 +4,8 @@
   "private": true,
   "scripts": {
     "dev": "doppler run -- next dev",
-    "build": "next build",
-    "start": "next start",
+    "build": "doppler run -- next build",
+    "start": "doppler run -- next start",
     "lint": "next lint",
     "format": "prettier --write ."
   },
@@ -25,7 +25,8 @@
     "react-circular-progressbar": "^2.1.0",
     "react-dom": "^17.0.2",
     "react-qty-picker": "^1.0.6",
-    "react-router-dom": "^6.3.0"
+    "react-router-dom": "^6.3.0",
+    "sharp": "^0.30.7"
   },
   "devDependencies": {
     "@types/node": "^17.0.4",

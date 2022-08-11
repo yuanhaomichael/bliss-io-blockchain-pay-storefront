@@ -6,6 +6,8 @@
   margin: auto;
   margin-top: 30px;
   display: block;
+  height: auto;
+  padding: auto;
 }
 
 .container {
@@ -22,6 +24,11 @@
 }
 
 @media (min-width: 1024px) {
+  .qr {
+    display: inline-block;
+    margin-top: 40px;
+    width: 500px;
+  }
   .container {
     width: auto;
     margin: auto;
@@ -39,7 +46,7 @@
     margin-left: 50px;
     margin-top: 20px;
     width: 180px;
-    height: 50px;
+    height: auto;
     font-size: 15px;
   }
 }

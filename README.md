@@ -10,4 +10,4 @@
 - calculate amount from params in the backend //
 - mobile wallet integrations
 - mobile first CSS optimization //
-- throttling issues 
+- throttling issues //

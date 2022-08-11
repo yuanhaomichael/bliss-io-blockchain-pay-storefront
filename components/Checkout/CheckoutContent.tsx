@@ -1,15 +1,17 @@
+import { useWallet } from "@solana/wallet-adapter-react";
 import { useRouter } from "next/router";
 import styles from "./index.module.css";
 
 interface props {
   submitTarget: string;
-  enabled: boolean;
   usd: number;
   sol: number;
   canOrder: boolean;
 }
-function CheckoutContent({ submitTarget, enabled, usd, sol, canOrder }: props) {
+function CheckoutContent({ submitTarget, usd, sol, canOrder }: props) {
   const router = useRouter();
+  const { publicKey } = useWallet();
+
   return (
     <div className={styles.container}>
       <form>
@@ -25,14 +27,14 @@ function CheckoutContent({ submitTarget, enabled, usd, sol, canOrder }: props) {
         <input type="text" placeholder="CA"></input>
         <label className={styles.input}>Zipcode</label>
         <input type="number" placeholder="94083"></input>
-        {!enabled && <p>Connect your wallet first before placing an order</p>}
+        {!publicKey && <p>Connect your wallet first before placing an order or use mobile wallet</p>}
         <br />
         <button
           className={styles.button}
           onClick={(e) => {
             e.preventDefault();
-            if (enabled) {
-              router.push({ pathname: submitTarget, query: { pay: "sol" } });
+            if (publicKey) {
+              router.push({ pathname: submitTarget, query: { pay: "sol", method: "browser" } });
             }
           }}
         >
@@ -42,14 +44,38 @@ function CheckoutContent({ submitTarget, enabled, usd, sol, canOrder }: props) {
           className={styles.button}
           onClick={(e) => {
             e.preventDefault();
-            if (enabled) {
-              router.push({ pathname: submitTarget, query: { pay: "usdc" } });
+            if (publicKey) {
+              router.push({ pathname: submitTarget, query: { pay: "usd", method: "browser" } });
             }
           }}
         >
           Place Order in USDC: {canOrder ? usd : "(loading...)"}
         </button>
+
+        <button
+          className={styles.button}
+          onClick={(e) => {
+            e.preventDefault();
+  
+              router.push({ pathname: submitTarget, query: { pay: "sol", method: "mobile" } });
+          }}
+        >
+          Place Order with Mobile in Sol: {canOrder ? sol : "(loading...)"}
+        </button>
+        <button
+          className={styles.button}
+          onClick={(e) => {
+            e.preventDefault();
+
+              router.push({ pathname: submitTarget, query: { pay: "usd", method: "mobile" } });
+          
+          }}
+        >
+          Place Order with Mobile in USDC: {canOrder ? usd : "(loading...)"}
+        </button>
       </form>
+    
+
     </div>
   );
 }
