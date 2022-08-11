@@ -7,7 +7,7 @@ import {
   makeTransactionInputData,
   makeTransactionOutputData,
 } from "./api/makeTransaction";
-import { findReference, FindReferenceError, createQR } from "@solana/pay";
+import { findReference, FindReferenceError, createQR, validateTransfer } from "@solana/pay";
 import { useRouter } from "next/router";
 import { getSymbolUsdValue } from "../lib/getSymbolUsdValue";
 import BigNumber from "bignumber.js";
@@ -48,7 +48,7 @@ function Ordering() {
       qrRef.current.innerHTML = ''
       qr.append(qrRef.current)
     }      
-  }, [])
+  })
 
   async function getTransaction(amount: number, amountSol: number) {
     if (!publicKey) {
@@ -131,16 +131,40 @@ function Ordering() {
   // check every 0.3s if the transaction is completed
   useEffect(() => {
     const interval = setInterval(async () => {
-      try {
+      if (payMethod === "browser"){
+        try {
         const tx = await findReference(connection, reference);
         router.push("/confirmed");
-      } catch (e) {
-        if (e instanceof FindReferenceError) {
-          // console.error("no tx find matching reference")
-          return;
+        } catch (e) {
+          if (e instanceof FindReferenceError) {
+            // console.error("no tx find matching reference")
+            return;
+          }
+          console.error("unknown error when confirming that you paid");
         }
-        console.error("unknown error when confirming that you paid");
       }
+      if (payMethod === "mobile") {
+        try {
+          const signatureInfo = await findReference(connection, reference, {finality: "confirmed"})
+          const merchant = new PublicKey("DknJQ9k5dfA54QwLoiACyB1vPpCTHBXbecHajvyLacvw")
+          const usdcAddr = new PublicKey("Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr")
+          await validateTransfer(
+            connection,
+            signatureInfo.signature,
+            {
+              recipient: merchant,
+              amount: payCurrency === "sol" ? new BigNumber(amountSol) : new BigNumber(amount),
+              splToken: payCurrency === "sol" ? undefined : usdcAddr,
+              reference
+            },
+            { commitment: 'confirmed'}
+          )
+          router.push('/confirmed')
+        } catch (e){
+          console.error(e)
+        }
+      }
+      
     }, 300);
     return () => {
       clearInterval(interval);
