@@ -2,21 +2,31 @@
   height: 500px;
   width: 100%;
   position: relative;
-  float: left;
   margin: 10px;
   align-items: center;
   text-align: center;
+  margin-bottom: auto;
 }
 
-.input {
-  width: 50px;
-  margin-left: 20px;
+.picker {
+  position: absolute;
+  text-align: center;
+  vertical-align: middle;
+  width: 100%;
+  padding: auto;
+  padding-left: 20%;
 }
 
 @media (min-width: 256px) {
+  .picker{
+    padding-left: 30%;
+  }
 }
 
 @media (min-width: 512px) {
+  .picker {
+    padding-left: 40%;
+  }
 }
 
 @media (min-width: 1024px) {
@@ -28,5 +38,8 @@
     margin: 10px;
     align-items: center;
     text-align: center;
+  }
+  .picker {
+    padding-left: 30%;
   }
 }
