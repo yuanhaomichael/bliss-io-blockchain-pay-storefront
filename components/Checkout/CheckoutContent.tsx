@@ -27,14 +27,22 @@ function CheckoutContent({ submitTarget, usd, sol, canOrder }: props) {
         <input type="text" placeholder="CA"></input>
         <label className={styles.input}>Zipcode</label>
         <input type="number" placeholder="94083"></input>
-        {!publicKey && <p>Connect your wallet first before placing an order or use mobile wallet</p>}
+        {!publicKey && (
+          <p>
+            Connect your wallet first before placing an order or use mobile
+            wallet
+          </p>
+        )}
         <br />
         <button
           className={styles.button}
           onClick={(e) => {
             e.preventDefault();
             if (publicKey) {
-              router.push({ pathname: submitTarget, query: { pay: "sol", method: "browser" } });
+              router.push({
+                pathname: submitTarget,
+                query: { pay: "sol", method: "browser" },
+              });
             }
           }}
         >
@@ -45,7 +53,10 @@ function CheckoutContent({ submitTarget, usd, sol, canOrder }: props) {
           onClick={(e) => {
             e.preventDefault();
             if (publicKey) {
-              router.push({ pathname: submitTarget, query: { pay: "usd", method: "browser" } });
+              router.push({
+                pathname: submitTarget,
+                query: { pay: "usd", method: "browser" },
+              });
             }
           }}
         >
@@ -56,8 +67,11 @@ function CheckoutContent({ submitTarget, usd, sol, canOrder }: props) {
           className={styles.button}
           onClick={(e) => {
             e.preventDefault();
-  
-              router.push({ pathname: submitTarget, query: { pay: "sol", method: "mobile" } });
+
+            router.push({
+              pathname: submitTarget,
+              query: { pay: "sol", method: "mobile" },
+            });
           }}
         >
           Place Order with Mobile in Sol: {canOrder ? sol : "(loading...)"}
@@ -67,15 +81,15 @@ function CheckoutContent({ submitTarget, usd, sol, canOrder }: props) {
           onClick={(e) => {
             e.preventDefault();
 
-              router.push({ pathname: submitTarget, query: { pay: "usd", method: "mobile" } });
-          
+            router.push({
+              pathname: submitTarget,
+              query: { pay: "usd", method: "mobile" },
+            });
           }}
         >
           Place Order with Mobile in USDC: {canOrder ? usd : "(loading...)"}
         </button>
       </form>
-    
-
     </div>
   );
 }

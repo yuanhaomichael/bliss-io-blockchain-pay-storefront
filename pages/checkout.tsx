@@ -12,8 +12,6 @@ function Checkout() {
 
   const [totalSol, setTotalSol] = useState(0);
 
-
-
   async function calculateAmount() {
     if (!query) {
       console.error("query is empty");
@@ -39,6 +37,9 @@ function Checkout() {
     setTotalSol(parseFloat(json.amountSol));
   }
 
+  const amountCheck = () => {
+    return totalSol > 0 && total !== 0 && total === amount;
+  };
   const didMount = useRef(false);
   useEffect(() => {
     calculateAmount();
@@ -57,20 +58,16 @@ function Checkout() {
     } else {
       didMount.current = true;
     }
-  }, [
-    () => {
-      return totalSol > 0 && total !== 0 && total === amount;
-    },
-  ]);
+  }, [amountCheck]);
 
   return (
     <div>
-        <CheckoutContent
-          submitTarget="/ordering"
-          usd={total}
-          sol={totalSol}
-          canOrder={canOrder}
-        />
+      <CheckoutContent
+        submitTarget="/ordering"
+        usd={total}
+        sol={totalSol}
+        canOrder={canOrder}
+      />
     </div>
   );
 }

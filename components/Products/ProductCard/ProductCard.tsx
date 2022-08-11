@@ -3,7 +3,7 @@ import Image from "next/image";
 import React, { useEffect } from "react";
 import { useState } from "react";
 import { useCart } from "../../../lib/contexts/CartProvider";
-import { QuantityPicker } from 'react-qty-picker'
+import { QuantityPicker } from "react-qty-picker";
 
 interface Props {
   id: string;
@@ -38,20 +38,31 @@ function ProductCard({
   return (
     <div className={styles.container}>
       <h3>{name}</h3>
-      <Image layout="fixed" width={200} height={200} src={image} />
+      <Image
+        layout="fixed"
+        alt="product photos"
+        width={200}
+        height={200}
+        src={image}
+      />
       <p>${price}</p>
       <p>{description}</p>
 
       <div className={styles.picker}>
-        <QuantityPicker min={0} smooth onChange={(value:number)=>{
-          const newValue = value;
-          setQuantityChange(newValue - quantity);
-          if (newValue < 0) {
-            setQuantity(0);
-          } else {
-            setQuantity(newValue);
-          }
-        }}/></div>
+        <QuantityPicker
+          min={0}
+          smooth
+          onChange={(value: number) => {
+            const newValue = value;
+            setQuantityChange(newValue - quantity);
+            if (newValue < 0) {
+              setQuantity(0);
+            } else {
+              setQuantity(newValue);
+            }
+          }}
+        />
+      </div>
     </div>
   );
 }

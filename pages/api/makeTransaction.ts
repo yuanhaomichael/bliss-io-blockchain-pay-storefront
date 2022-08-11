@@ -2,7 +2,7 @@ import { WalletAdapterNetwork } from "@solana/wallet-adapter-base";
 import {
   createTransferCheckedInstruction,
   getAssociatedTokenAddress,
-  getMint
+  getMint,
 } from "@solana/spl-token";
 import { NextApiRequest, NextApiResponse } from "next";
 import {
@@ -106,17 +106,16 @@ export default async function handler(
         fromPubkey: customerAddr,
         lamports: amount.multipliedBy(LAMPORTS_PER_SOL).toNumber(),
         toPubkey: merchantAddr,
-      })
+      });
 
-    // add instruction to Transaction and serialize it
-    transferIx.keys.push({
-      pubkey: new PublicKey(txRef),
-      isSigner: false,
-      isWritable: false,
-    });
+      // add instruction to Transaction and serialize it
+      transferIx.keys.push({
+        pubkey: new PublicKey(txRef),
+        isSigner: false,
+        isWritable: false,
+      });
 
-    newTx.add(transferIx);
-
+      newTx.add(transferIx);
     } else {
       // Create the instruction to send USDC from the buyer to the shop
       const transferIx = createTransferCheckedInstruction(
@@ -126,7 +125,7 @@ export default async function handler(
         customerAddr, // owner of source address
         amount.toNumber() * 10 ** (await usdcMint).decimals, // amount to transfer (in units of the USDC token)
         usdcMint.decimals // decimals of the USDC token
-      )
+      );
 
       // add instruction to Transaction and serialize it
       transferIx.keys.push({
@@ -137,8 +136,6 @@ export default async function handler(
 
       newTx.add(transferIx);
     }
-
-
 
     const serializedTx = newTx.serialize({
       requireAllSignatures: false,
