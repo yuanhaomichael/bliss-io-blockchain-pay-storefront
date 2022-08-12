@@ -2,7 +2,7 @@ import { encodeURL, TransferRequestURLFields } from "@solana/pay";
 import { PublicKey } from "@solana/web3.js";
 import BigNumber from "bignumber.js";
 
-export default function generateSolPayUrl(
+export default function generateSolPayTransferUrl(
   amount: number,
   type: string,
   reference: PublicKey
