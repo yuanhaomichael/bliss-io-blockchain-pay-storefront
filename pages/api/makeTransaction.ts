@@ -100,17 +100,25 @@ export default async function handler(
       feePayer: customerAddr,
     });
 
-    let transferIx = null;
     if (currency === "sol") {
       // create Transaction instruction for sol
-      transferIx = SystemProgram.transfer({
+      const transferIx = SystemProgram.transfer({
         fromPubkey: customerAddr,
         lamports: amount.multipliedBy(LAMPORTS_PER_SOL).toNumber(),
         toPubkey: merchantAddr,
       });
+
+      // add instruction to Transaction and serialize it
+      transferIx.keys.push({
+        pubkey: new PublicKey(txRef),
+        isSigner: false,
+        isWritable: false,
+      });
+
+      newTx.add(transferIx);
     } else {
       // Create the instruction to send USDC from the buyer to the shop
-      transferIx = createTransferCheckedInstruction(
+      const transferIx = createTransferCheckedInstruction(
         customerUsdcAddr, // source
         usdcAddr, // mint (token address)
         merchantUsdcAddr, // destination
@@ -118,16 +126,16 @@ export default async function handler(
         amount.toNumber() * 10 ** (await usdcMint).decimals, // amount to transfer (in units of the USDC token)
         usdcMint.decimals // decimals of the USDC token
       );
+
+      // add instruction to Transaction and serialize it
+      transferIx.keys.push({
+        pubkey: new PublicKey(txRef),
+        isSigner: false,
+        isWritable: false,
+      });
+
+      newTx.add(transferIx);
     }
-
-    // add instruction to Transaction and serialize it
-    transferIx.keys.push({
-      pubkey: new PublicKey(txRef),
-      isSigner: false,
-      isWritable: false,
-    });
-
-    newTx.add(transferIx);
 
     const serializedTx = newTx.serialize({
       requireAllSignatures: false,

@@ -1,11 +1,9 @@
 import CheckoutContent from "../components/Checkout/CheckoutContent";
-import { useWallet } from "@solana/wallet-adapter-react";
 import { useCart } from "../lib/contexts/CartProvider";
 import { useRouter } from "next/router";
 import { useEffect, useRef, useState } from "react";
 
 function Checkout() {
-  const { publicKey } = useWallet();
   const [total, setTotal] = useState(0);
   const { amount, setAmount } = useCart();
   const [canOrder, setCanOrder] = useState(false);
@@ -39,6 +37,9 @@ function Checkout() {
     setTotalSol(parseFloat(json.amountSol));
   }
 
+  const amountCheck = () => {
+    return totalSol > 0 && total !== 0 && total === amount;
+  };
   const didMount = useRef(false);
   useEffect(() => {
     calculateAmount();
@@ -57,31 +58,16 @@ function Checkout() {
     } else {
       didMount.current = true;
     }
-  }, [
-    () => {
-      return totalSol > 0 && total !== 0 && total === amount;
-    },
-  ]);
+  }, [amountCheck]);
 
   return (
     <div>
-      {canOrder ? (
-        <CheckoutContent
-          submitTarget="/ordering"
-          enabled={publicKey !== null}
-          usd={total}
-          sol={totalSol}
-          canOrder={canOrder}
-        />
-      ) : (
-        <CheckoutContent
-          submitTarget="/"
-          enabled={publicKey !== null}
-          usd={total}
-          sol={totalSol}
-          canOrder={canOrder}
-        />
-      )}
+      <CheckoutContent
+        submitTarget="/ordering"
+        usd={total}
+        sol={totalSol}
+        canOrder={canOrder}
+      />
     </div>
   );
 }
