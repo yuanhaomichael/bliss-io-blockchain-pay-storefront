@@ -32,9 +32,9 @@ type errorOutput = {
 };
 
 type getResponse = {
-  label: string
-  icon: string
-}
+  label: string;
+  icon: string;
+};
 
 function parseTotal(total: number): BigNumber {
   if (total) {
@@ -48,7 +48,6 @@ function parseTotal(total: number): BigNumber {
 //   const value = process.env[key];
 //   return value;
 // }
-
 
 async function calculateAmount(orderParams, currency) {
   const body = {
@@ -67,21 +66,20 @@ async function calculateAmount(orderParams, currency) {
     console.error("calculate amount failed", json);
     return;
   }
-  if (currency === 'usd'){
-    return json.amount
-  } 
-  if (currency === 'sol'){
-    return json.amountSol
+  if (currency === "usd") {
+    return json.amount;
+  }
+  if (currency === "sol") {
+    return json.amountSol;
   }
 }
 
-function get(res: NextApiResponse<getResponse>){
+function get(res: NextApiResponse<getResponse>) {
   res.status(200).json({
     label: "Blockshop",
     icon: "https://sol-checkout-demo.s3.amazonaws.com/logo.webp",
-  })
+  });
 }
-
 
 async function post(
   req: NextApiRequest,
@@ -90,43 +88,41 @@ async function post(
   try {
     const query = req.query;
     console.log("query,", query);
-    
+
     let amount = new BigNumber(0);
-    let merchantAccount = process.env.MERCHANT_WALLET_ADDR as string
-    let customerAccount = ''
-    let txRef = ''
-    let currency = ''
-    if (Object.keys(query).length === 0){
+    let merchantAccount = process.env.MERCHANT_WALLET_ADDR as string;
+    let customerAccount = "";
+    let txRef = "";
+    let currency = "";
+    if (Object.keys(query).length === 0) {
       // parse request for browser requests, whcih have a full req.body
-      
-      amount = parseTotal(req.body.total)
-      customerAccount = req.body.customerAccount as string
-      txRef = req.body.txRef
-      currency = req.body.currency
-    } 
-    else {
+
+      amount = parseTotal(req.body.total);
+      customerAccount = req.body.customerAccount as string;
+      txRef = req.body.txRef;
+      currency = req.body.currency;
+    } else {
       // parse request for mobile wallet requests, which have a req.body with {account: 0x...}
       // must calculateAmount and get currency from params
 
-      let orderParams = {}
+      let orderParams = {};
       // get payCurrency and reference and orderParams from query params
-      for (const [key, value] of Object.entries(query)){
-        if(key === "pay"){
-          currency = value as string
+      for (const [key, value] of Object.entries(query)) {
+        if (key === "pay") {
+          currency = value as string;
         } else if (key === "ref") {
-          txRef = value as string
+          txRef = value as string;
         } else {
           orderParams[key] = value;
         }
       }
       // calculate total based on orderParams and currency
-      let tmp = await calculateAmount(orderParams, currency)
-      amount = parseTotal(tmp)
+      let tmp = await calculateAmount(orderParams, currency);
+      amount = parseTotal(tmp);
 
       // get customerAccount from req.body
-      customerAccount = req.body.account
+      customerAccount = req.body.account;
     }
-
 
     if (amount.toNumber() === 0) {
       res.status(400).json({ error: "can't checkout with total of 0" });
@@ -229,17 +225,15 @@ async function post(
   }
 }
 
-
-export default async function handler (
-  req: NextApiRequest, 
-  res: NextApiResponse<makeTransactionOutputData | getResponse | errorOutput>){
-    if(req.method === "GET"){
-      return get(res)
-    }
-    else if(req.method === "POST") {
-      return await post(req, res);
-    }
-    else {
-      res.status(405).json({ error: "method not allowed"})
-    }
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse<makeTransactionOutputData | getResponse | errorOutput>
+) {
+  if (req.method === "GET") {
+    return get(res);
+  } else if (req.method === "POST") {
+    return await post(req, res);
+  } else {
+    res.status(405).json({ error: "method not allowed" });
   }
+}

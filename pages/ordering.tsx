@@ -19,15 +19,14 @@ import { getSymbolUsdValue } from "../lib/getSymbolUsdValue";
 import BigNumber from "bignumber.js";
 import { ParsedUrlQuery } from "querystring";
 
-
-function getOrderParams(query: ParsedUrlQuery): string{
-  let res = '';
+function getOrderParams(query: ParsedUrlQuery): string {
+  let res = "";
   for (const [key, quantity] of Object.entries(query)) {
-    if (key !== "method" && key!== "pay" && key !=="amount"){
-      res = res + '&' + key + '=' + quantity
+    if (key !== "method" && key !== "pay" && key !== "amount") {
+      res = res + "&" + key + "=" + quantity;
     }
   }
-  return res
+  return res;
 }
 
 function Ordering() {
@@ -51,8 +50,7 @@ function Ordering() {
   const [transaction, setTransaction] = useState<Transaction | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [amountSol, setAmountSol] = useState(0);
-  const { amount } = useCart();
-  
+  const { amount, setAmount } = useCart();
 
   console.log("amount in ordering.tsx", amount);
 
@@ -66,11 +64,11 @@ function Ordering() {
     const { location } = window;
 
     // use orderParams and payCurrency to calculateAmount() in the backend
-    const apiUrl = `${location.protocol}//${location.host}/api/makeTransaction?pay=${payCurrency}&ref=${reference}${orderParams}`
+    const apiUrl = `${location.protocol}//${location.host}/api/makeTransaction?pay=${payCurrency}&ref=${reference}${orderParams}`;
     // console.log("apiUrl", apiUrl)
     const urlParams: TransactionRequestURLFields = {
       link: new URL(apiUrl),
-    }
+    };
     const url = encodeURL(urlParams);
     const qr = createQR(url, 256, "transparent");
     if (qrRef.current && amount > 0 && amountSol > 0) {
@@ -164,6 +162,7 @@ function Ordering() {
       if (payMethod === "browser") {
         try {
           const tx = await findReference(connection, reference);
+          setAmount(0)
           router.push("/confirmed");
         } catch (e) {
           if (e instanceof FindReferenceError) {
