@@ -94,6 +94,7 @@ async function post(
     let customerAccount = "";
     let txRef = "";
     let currency = "";
+    let orderParams = {};
     if (Object.keys(query).length === 0) {
       // parse request for browser requests, whcih have a full req.body
 
@@ -105,7 +106,6 @@ async function post(
       // parse request for mobile wallet requests, which have a req.body with {account: 0x...}
       // must calculateAmount and get currency from params
 
-      let orderParams = {};
       // get payCurrency and reference and orderParams from query params
       for (const [key, value] of Object.entries(query)) {
         if (key === "pay") {
@@ -118,11 +118,15 @@ async function post(
       }
       // calculate total based on orderParams and currency
       let tmp = await calculateAmount(orderParams, currency);
+      console.log(tmp)
+      
       amount = parseTotal(tmp);
 
       // get customerAccount from req.body
       customerAccount = req.body.account;
     }
+
+    console.log("debug:", {query, amount, merchantAccount, customerAccount, txRef, currency, orderParams})
 
     if (amount.toNumber() === 0) {
       res.status(400).json({ error: "can't checkout with total of 0" });

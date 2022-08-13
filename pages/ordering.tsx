@@ -67,7 +67,7 @@ function Ordering() {
     const apiUrl = `${location.protocol}//${location.host}/api/makeTransaction?pay=${payCurrency}&ref=${reference}${orderParams}`;
     // console.log("apiUrl", apiUrl)
     const urlParams: TransactionRequestURLFields = {
-      link: new URL(apiUrl),
+      link: new URL(apiUrl)
     };
     const url = encodeURL(urlParams);
     const qr = createQR(url, 256, "transparent");
@@ -111,7 +111,7 @@ function Ordering() {
     );
     setTransaction(transaction);
     setMessage(json.message);
-    console.log(transaction);
+    console.log("transaction", transaction);
   }
 
   // createTx call, depending on when sol amount is avail
