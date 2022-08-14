@@ -1,7 +1,6 @@
 import products from "./productList";
 import { getSymbolUsdValue } from "./getSymbolUsdValue";
 
-
 export default async function calculateAmount(params: object): Promise<any> {
   let tmp = 0;
   for (const [key, quantity] of Object.entries(params)) {

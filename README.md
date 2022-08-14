@@ -23,11 +23,12 @@
 ---
 
 # loyalty
+
 - create local script to create the thank you point token //
 - add logic in makeTransaction.ts to check for thank you points holdings in customer account //
 - add discount logic in makeTransaction.ts <--
 - add file in lib to calculate point rewards //
-- add logic to transfer new point awards in makeTransaction.ts 
+- add logic to transfer new point awards in makeTransaction.ts
 - db client connection
 - add logic to write appropriate fields into db in makeTransaction
 
@@ -38,8 +39,8 @@
 - trigger NFT burning in makeTransaction.ts
 - logic to update DB
 
-
 # customer dashboard
+
 - wallet connection
 - front end
 - display data from wallet account

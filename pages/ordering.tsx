@@ -32,7 +32,7 @@ function getOrderParams(query: ParsedUrlQuery): string {
 function Ordering() {
   const { publicKey, sendTransaction } = useWallet();
   const { connection } = useConnection();
-  const [transactionSummary, setTransactionSummary] = useState({})
+  const [transactionSummary, setTransactionSummary] = useState({});
   const router = useRouter();
   const { query } = router;
   let payMethod = "";
@@ -112,9 +112,9 @@ function Ordering() {
     );
     setTransaction(transaction);
     setMessage(json.message);
-    setTransactionSummary(json.transactionSummary)
+    setTransactionSummary(json.transactionSummary);
     console.log("transaction", transaction);
-    console.log("tx summary", transactionSummary)
+    console.log("tx summary", transactionSummary);
   }
 
   // createTx call, depending on when sol amount is avail
@@ -166,7 +166,10 @@ function Ordering() {
         try {
           const tx = await findReference(connection, reference);
           setAmount(0);
-          router.push({pathname: "/confirmed", query: {...transactionSummary, payCurrency}});
+          router.push({
+            pathname: "/confirmed",
+            query: { ...transactionSummary, payCurrency },
+          });
         } catch (e) {
           if (e instanceof FindReferenceError) {
             // console.error("no tx find matching reference")
@@ -198,9 +201,12 @@ function Ordering() {
               splToken: payCurrency === "sol" ? undefined : usdcAddr,
               reference,
             },
-            { commitment: "confirmed"}
+            { commitment: "confirmed" }
           );
-          router.push({pathname: "/confirmed", query: {...transactionSummary, payCurrency}});
+          router.push({
+            pathname: "/confirmed",
+            query: { ...transactionSummary, payCurrency },
+          });
         } catch (e) {
           console.error(e);
         }
@@ -217,7 +223,10 @@ function Ordering() {
         {message ? (
           <p>{message} Please approve the transaction using your wallet</p>
         ) : (
-          <p>Creating transaction... (if after a while the wallet modal does not pop up, there could be an error...)</p>
+          <p>
+            Creating transaction... (if after a while the wallet modal does not
+            pop up, there could be an error...)
+          </p>
         )}
       </div>
     );
