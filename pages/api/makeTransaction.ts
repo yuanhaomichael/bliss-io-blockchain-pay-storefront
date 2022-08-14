@@ -1,6 +1,7 @@
 import { WalletAdapterNetwork } from "@solana/wallet-adapter-base";
 import calculateAmount from "../../lib/calculateAmount";
 import calculateDiscount from "../../lib/calculateDiscount";
+import calculateRewardPoints from "../../lib/calculateRewardPoints";
 import {
   createTransferCheckedInstruction,
   getAccount,
@@ -20,6 +21,8 @@ import {
 } from "@solana/web3.js";
 import BigNumber from "bignumber.js";
 import base58 from 'bs58'
+import { shopPointsDecimals } from "../../lib/const";
+const pointsConversion = shopPointsDecimals === 0 ? 1 : shopPointsDecimals * 10;
 
 export type makeTransactionInputData = {
   customerAccount: string;
@@ -31,6 +34,7 @@ export type makeTransactionInputData = {
 export type makeTransactionOutputData = {
   transaction: string;
   message: string;
+  transactionSummary: object;
 };
 
 type errorOutput = {
@@ -180,7 +184,7 @@ async function post(
       merchantAddr
     )
     const {amount: customerPointsBalanceRaw} = await getAccount(connection, customerPointsAccount)
-    const customerPointsBalance = Math.floor(parseInt(customerPointsBalanceRaw.toLocaleString()) / 10)
+    const customerPointsBalance = Math.floor(parseInt(customerPointsBalanceRaw.toLocaleString())/(pointsConversion)) 
     console.log("debug loyalty system:", {
       customerPointsAccount,
       merchantPointsAccount,
@@ -192,15 +196,46 @@ async function post(
 
     // calculate discount and rewards, update final amount
     let {discount, pointsToBurn, nftsToBurn} = await calculateDiscount(amountBeforeDiscount, customerPointsBalance, badges, currency)
-    console.log("debug discounts:", {discount, pointsToBurn, nftsToBurn});
+    console.log("debug discounts:", {discount, pointsToBurn, nftsToBurn, amountBeforeDiscount});
     
      
-    const amount = parseTotal(amountBeforeDiscount)
+    const amount = parseTotal(amountBeforeDiscount - discount)
+    console.log("final amount is", amount.toNumber());
+    
     // create a Transaction
     const newTx = new Transaction({
       recentBlockhash: blockhash,
       feePayer: customerAddr,
     });
+
+    // shop recycling users' Thank you points from user's account (sending to merchant account)
+    const burnIx = createTransferCheckedInstruction(
+      customerPointsAccount,
+      pointsAddr,
+      merchantPointsAccount,
+      customerAddr,
+      pointsToBurn * pointsConversion,
+      1
+    )
+
+    // shop issuing Thank You points back to customer
+    const rewardPoints = await calculateRewardPoints(amountBeforeDiscount, discount, currency)
+    console.log("reward points", rewardPoints);
+    
+    const rewardIx = createTransferCheckedInstruction(
+      merchantPointsAccount,
+      pointsAddr,
+      customerPointsAccount,
+      merchantAddr,
+      rewardPoints * pointsConversion,
+      1
+    )
+    rewardIx.keys.push({
+      pubkey: merchantAddr,
+      isSigner: true,
+      isWritable: false
+    })
+    
 
     if (currency === "sol") {
       // create Transaction instruction for sol
@@ -217,7 +252,7 @@ async function post(
         isWritable: false,
       });
 
-      newTx.add(transferIx);
+      newTx.add(transferIx, burnIx, rewardIx);
     } else {
       // Create the instruction to send USDC from the buyer to the shop
       const transferIx = createTransferCheckedInstruction(
@@ -236,8 +271,11 @@ async function post(
         isWritable: false,
       });
 
-      newTx.add(transferIx);
+      newTx.add(transferIx, burnIx, rewardIx);
     }
+
+    // must partially sign the tx so that shop can auto send the points to customer (as discount)
+    newTx.partialSign(shopKeyPair)
 
     const serializedTx = newTx.serialize({
       requireAllSignatures: false,
@@ -252,7 +290,15 @@ async function post(
     // return the transaction
     res.status(200).json({
       transaction: base64SerializedTx,
-      message: "Thank you for your purchase!",
+      message: "thanks for shopping with us!",
+      transactionSummary: {
+        amountBeforeDiscount,
+        discount,
+        finalAmount: amount.toNumber(),
+        pointsToBurn,
+        rewardPoints,
+        txRef
+      }
     });
   } catch (err) {
     res.status(500).json({

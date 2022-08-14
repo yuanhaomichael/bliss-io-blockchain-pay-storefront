@@ -1,10 +1,6 @@
 import products from "./productList";
 import { getSymbolUsdValue } from "./getSymbolUsdValue";
 
-interface returnInterface {
-  amount: number | undefined;
-  amountSol: number | undefined;
-}
 
 export default async function calculateAmount(params: object): Promise<any> {
   let tmp = 0;

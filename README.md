@@ -24,10 +24,9 @@
 
 # loyalty
 - create local script to create the thank you point token //
-- modify calculateAmount in lib to calculate final amount after point discount
-- add logic in makeTransaction.ts to check for thank you points holdings in customer account
-- add discount logic in makeTransaction.ts
-- add file in lib to calculate point rewards
+- add logic in makeTransaction.ts to check for thank you points holdings in customer account //
+- add discount logic in makeTransaction.ts <--
+- add file in lib to calculate point rewards //
 - add logic to transfer new point awards in makeTransaction.ts 
 - db client connection
 - add logic to write appropriate fields into db in makeTransaction
