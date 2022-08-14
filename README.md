@@ -16,6 +16,6 @@
 
 # Tx request
 
-- modify makeTransaction API to handle both get and post
-- update QR code generation
+- modify makeTransaction API to handle both get and post //
+- update QR code generation //
 - host the api at a custom domain on serverless in AWS Lambda

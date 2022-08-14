@@ -1,4 +1,5 @@
 import { WalletAdapterNetwork } from "@solana/wallet-adapter-base";
+import calculateAmount from "../../lib/calculateAmount";
 import {
   createTransferCheckedInstruction,
   getAssociatedTokenAddress,
@@ -49,30 +50,7 @@ function parseTotal(total: number): BigNumber {
 //   return value;
 // }
 
-async function calculateAmount(orderParams, currency) {
-  const body = {
-    params: orderParams,
-  };
-  const response = await fetch(`/api/calculateAmount`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Accept: "application/json",
-    },
-    body: JSON.stringify(body),
-  });
-  const json = await response.json();
-  if (response.status !== 200) {
-    console.error("calculate amount failed", json);
-    return;
-  }
-  if (currency === "usd") {
-    return json.amount;
-  }
-  if (currency === "sol") {
-    return json.amountSol;
-  }
-}
+
 
 function get(res: NextApiResponse<getResponse>) {
   res.status(200).json({
@@ -96,8 +74,8 @@ async function post(
     let currency = "";
     let orderParams = {};
     if (Object.keys(query).length === 0) {
+      console.log("browser POST req")
       // parse request for browser requests, whcih have a full req.body
-
       amount = parseTotal(req.body.total);
       customerAccount = req.body.customerAccount as string;
       txRef = req.body.txRef;
@@ -105,7 +83,7 @@ async function post(
     } else {
       // parse request for mobile wallet requests, which have a req.body with {account: 0x...}
       // must calculateAmount and get currency from params
-
+      console.log("mobile POST req")
       // get payCurrency and reference and orderParams from query params
       for (const [key, value] of Object.entries(query)) {
         if (key === "pay") {
@@ -117,10 +95,13 @@ async function post(
         }
       }
       // calculate total based on orderParams and currency
-      let tmp = await calculateAmount(orderParams, currency);
-      console.log(tmp)
-      
-      amount = parseTotal(tmp);
+      try{
+        let {amount: totalUsd, amountSol: totalSol} = await calculateAmount(orderParams);
+        
+        amount = currency === "usd" ? parseTotal(totalUsd) : parseTotal(totalSol);
+      } catch(e){
+        console.log(e)
+      }
 
       // get customerAccount from req.body
       customerAccount = req.body.account;
