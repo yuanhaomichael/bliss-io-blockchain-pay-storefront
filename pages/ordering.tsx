@@ -67,7 +67,7 @@ function Ordering() {
     const apiUrl = `${location.protocol}//${location.host}/api/makeTransaction?pay=${payCurrency}&ref=${reference}${orderParams}`;
     // console.log("apiUrl", apiUrl)
     const urlParams: TransactionRequestURLFields = {
-      link: new URL(apiUrl)
+      link: new URL(apiUrl),
     };
     const url = encodeURL(urlParams);
     const qr = createQR(url, 256, "transparent");
@@ -162,7 +162,7 @@ function Ordering() {
       if (payMethod === "browser") {
         try {
           const tx = await findReference(connection, reference);
-          setAmount(0)
+          setAmount(0);
           router.push("/confirmed");
         } catch (e) {
           if (e instanceof FindReferenceError) {

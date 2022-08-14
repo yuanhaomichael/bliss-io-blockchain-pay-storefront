@@ -50,8 +50,6 @@ function parseTotal(total: number): BigNumber {
 //   return value;
 // }
 
-
-
 function get(res: NextApiResponse<getResponse>) {
   res.status(200).json({
     label: "Blockshop",
@@ -74,7 +72,7 @@ async function post(
     let currency = "";
     let orderParams = {};
     if (Object.keys(query).length === 0) {
-      console.log("browser POST req")
+      console.log("browser POST req");
       // parse request for browser requests, whcih have a full req.body
       amount = parseTotal(req.body.total);
       customerAccount = req.body.customerAccount as string;
@@ -83,7 +81,7 @@ async function post(
     } else {
       // parse request for mobile wallet requests, which have a req.body with {account: 0x...}
       // must calculateAmount and get currency from params
-      console.log("mobile POST req")
+      console.log("mobile POST req");
       // get payCurrency and reference and orderParams from query params
       for (const [key, value] of Object.entries(query)) {
         if (key === "pay") {
@@ -95,19 +93,30 @@ async function post(
         }
       }
       // calculate total based on orderParams and currency
-      try{
-        let {amount: totalUsd, amountSol: totalSol} = await calculateAmount(orderParams);
-        
-        amount = currency === "usd" ? parseTotal(totalUsd) : parseTotal(totalSol);
-      } catch(e){
-        console.log(e)
+      try {
+        let { amount: totalUsd, amountSol: totalSol } = await calculateAmount(
+          orderParams
+        );
+
+        amount =
+          currency === "usd" ? parseTotal(totalUsd) : parseTotal(totalSol);
+      } catch (e) {
+        console.log(e);
       }
 
       // get customerAccount from req.body
       customerAccount = req.body.account;
     }
 
-    console.log("debug:", {query, amount, merchantAccount, customerAccount, txRef, currency, orderParams})
+    console.log("debug:", {
+      query,
+      amount,
+      merchantAccount,
+      customerAccount,
+      txRef,
+      currency,
+      orderParams,
+    });
 
     if (amount.toNumber() === 0) {
       res.status(400).json({ error: "can't checkout with total of 0" });

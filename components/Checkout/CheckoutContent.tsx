@@ -30,7 +30,7 @@ function CheckoutContent({ submitTarget, usd, sol, canOrder, order }: props) {
         <label className={styles.input}>Zipcode</label>
         <input type="number" placeholder="94083"></input>
         {!publicKey && (
-          <p style={{"color": "red"}}>
+          <p style={{ color: "red" }}>
             Connect your wallet first before placing an order or use mobile
             wallet
           </p>
