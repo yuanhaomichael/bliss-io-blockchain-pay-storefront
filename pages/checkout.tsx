@@ -67,6 +67,7 @@ function Checkout() {
         usd={total}
         sol={totalSol}
         canOrder={canOrder}
+        order={query}
       />
     </div>
   );

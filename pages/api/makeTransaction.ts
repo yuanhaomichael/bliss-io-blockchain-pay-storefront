@@ -1,4 +1,5 @@
 import { WalletAdapterNetwork } from "@solana/wallet-adapter-base";
+import calculateAmount from "../../lib/calculateAmount";
 import {
   createTransferCheckedInstruction,
   getAssociatedTokenAddress,
@@ -31,6 +32,11 @@ type errorOutput = {
   error: string;
 };
 
+type getResponse = {
+  label: string;
+  icon: string;
+};
+
 function parseTotal(total: number): BigNumber {
   if (total) {
     return new BigNumber(total);
@@ -44,17 +50,73 @@ function parseTotal(total: number): BigNumber {
 //   return value;
 // }
 
-export default async function handler(
+function get(res: NextApiResponse<getResponse>) {
+  res.status(200).json({
+    label: "Blockshop",
+    icon: "https://sol-checkout-demo.s3.amazonaws.com/logo.webp",
+  });
+}
+
+async function post(
   req: NextApiRequest,
   res: NextApiResponse<makeTransactionOutputData | errorOutput>
 ) {
   try {
-    // parse request
-    const { total, customerAccount, txRef, currency } =
-      req.body as makeTransactionInputData;
-    const merchantAccount = process.env.MERCHANT_WALLET_ADDR;
-    const amount = parseTotal(total);
-    // c
+    const query = req.query;
+    console.log("query,", query);
+
+    let amount = new BigNumber(0);
+    let merchantAccount = process.env.MERCHANT_WALLET_ADDR as string;
+    let customerAccount = "";
+    let txRef = "";
+    let currency = "";
+    let orderParams = {};
+    if (Object.keys(query).length === 0) {
+      console.log("browser POST req");
+      // parse request for browser requests, whcih have a full req.body
+      amount = parseTotal(req.body.total);
+      customerAccount = req.body.customerAccount as string;
+      txRef = req.body.txRef;
+      currency = req.body.currency;
+    } else {
+      // parse request for mobile wallet requests, which have a req.body with {account: 0x...}
+      // must calculateAmount and get currency from params
+      console.log("mobile POST req");
+      // get payCurrency and reference and orderParams from query params
+      for (const [key, value] of Object.entries(query)) {
+        if (key === "pay") {
+          currency = value as string;
+        } else if (key === "ref") {
+          txRef = value as string;
+        } else {
+          orderParams[key] = value;
+        }
+      }
+      // calculate total based on orderParams and currency
+      try {
+        let { amount: totalUsd, amountSol: totalSol } = await calculateAmount(
+          orderParams
+        );
+
+        amount =
+          currency === "usd" ? parseTotal(totalUsd) : parseTotal(totalSol);
+      } catch (e) {
+        console.log(e);
+      }
+
+      // get customerAccount from req.body
+      customerAccount = req.body.account;
+    }
+
+    console.log("debug:", {
+      query,
+      amount,
+      merchantAccount,
+      customerAccount,
+      txRef,
+      currency,
+      orderParams,
+    });
 
     if (amount.toNumber() === 0) {
       res.status(400).json({ error: "can't checkout with total of 0" });
@@ -154,5 +216,18 @@ export default async function handler(
     res.status(500).json({
       error: "error creating new tx",
     });
+  }
+}
+
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse<makeTransactionOutputData | getResponse | errorOutput>
+) {
+  if (req.method === "GET") {
+    return get(res);
+  } else if (req.method === "POST") {
+    return await post(req, res);
+  } else {
+    res.status(405).json({ error: "method not allowed" });
   }
 }

@@ -1,5 +1,6 @@
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useRouter } from "next/router";
+import { ParsedUrlQuery } from "querystring";
 import styles from "./index.module.css";
 
 interface props {
@@ -7,8 +8,9 @@ interface props {
   usd: number;
   sol: number;
   canOrder: boolean;
+  order: ParsedUrlQuery;
 }
-function CheckoutContent({ submitTarget, usd, sol, canOrder }: props) {
+function CheckoutContent({ submitTarget, usd, sol, canOrder, order }: props) {
   const router = useRouter();
   const { publicKey } = useWallet();
 
@@ -28,7 +30,7 @@ function CheckoutContent({ submitTarget, usd, sol, canOrder }: props) {
         <label className={styles.input}>Zipcode</label>
         <input type="number" placeholder="94083"></input>
         {!publicKey && (
-          <p>
+          <p style={{ color: "red" }}>
             Connect your wallet first before placing an order or use mobile
             wallet
           </p>
@@ -41,7 +43,7 @@ function CheckoutContent({ submitTarget, usd, sol, canOrder }: props) {
             if (publicKey) {
               router.push({
                 pathname: submitTarget,
-                query: { pay: "sol", method: "browser" },
+                query: { pay: "sol", method: "browser", ...order },
               });
             }
           }}
@@ -55,7 +57,7 @@ function CheckoutContent({ submitTarget, usd, sol, canOrder }: props) {
             if (publicKey) {
               router.push({
                 pathname: submitTarget,
-                query: { pay: "usd", method: "browser" },
+                query: { pay: "usd", method: "browser", ...order },
               });
             }
           }}
@@ -70,7 +72,7 @@ function CheckoutContent({ submitTarget, usd, sol, canOrder }: props) {
 
             router.push({
               pathname: submitTarget,
-              query: { pay: "sol", method: "mobile" },
+              query: { pay: "sol", method: "mobile", ...order },
             });
           }}
         >
@@ -83,7 +85,7 @@ function CheckoutContent({ submitTarget, usd, sol, canOrder }: props) {
 
             router.push({
               pathname: submitTarget,
-              query: { pay: "usd", method: "mobile" },
+              query: { pay: "usd", method: "mobile", ...order },
             });
           }}
         >

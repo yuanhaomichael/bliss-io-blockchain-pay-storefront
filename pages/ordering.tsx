@@ -2,7 +2,6 @@ import { useWallet, useConnection } from "@solana/wallet-adapter-react";
 import { Keypair, Transaction, PublicKey } from "@solana/web3.js";
 import { useCart } from "../lib/contexts/CartProvider";
 import { useEffect, useRef, useMemo, useState } from "react";
-import generateSolPayUrl from "../lib/generateSolPayUrl";
 import {
   makeTransactionInputData,
   makeTransactionOutputData,
@@ -12,10 +11,23 @@ import {
   FindReferenceError,
   createQR,
   validateTransfer,
+  TransactionRequestURLFields,
+  encodeURL,
 } from "@solana/pay";
 import { useRouter } from "next/router";
 import { getSymbolUsdValue } from "../lib/getSymbolUsdValue";
 import BigNumber from "bignumber.js";
+import { ParsedUrlQuery } from "querystring";
+
+function getOrderParams(query: ParsedUrlQuery): string {
+  let res = "";
+  for (const [key, quantity] of Object.entries(query)) {
+    if (key !== "method" && key !== "pay" && key !== "amount") {
+      res = res + "&" + key + "=" + quantity;
+    }
+  }
+  return res;
+}
 
 function Ordering() {
   const { publicKey, sendTransaction } = useWallet();
@@ -38,16 +50,26 @@ function Ordering() {
   const [transaction, setTransaction] = useState<Transaction | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [amountSol, setAmountSol] = useState(0);
-  const { amount } = useCart();
+  const { amount, setAmount } = useCart();
+
   console.log("amount in ordering.tsx", amount);
 
   const reference = useMemo(() => Keypair.generate().publicKey, []);
   console.log("ref", reference);
 
+  // generate QR code
   const qrRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    const total = payCurrency === "sol" ? amountSol : amount;
-    const url = generateSolPayUrl(total, payCurrency, reference);
+    const orderParams = getOrderParams(query) as string;
+    const { location } = window;
+
+    // use orderParams and payCurrency to calculateAmount() in the backend
+    const apiUrl = `${location.protocol}//${location.host}/api/makeTransaction?pay=${payCurrency}&ref=${reference}${orderParams}`;
+    // console.log("apiUrl", apiUrl)
+    const urlParams: TransactionRequestURLFields = {
+      link: new URL(apiUrl),
+    };
+    const url = encodeURL(urlParams);
     const qr = createQR(url, 256, "transparent");
     if (qrRef.current && amount > 0 && amountSol > 0) {
       qrRef.current.innerHTML = "";
@@ -89,7 +111,7 @@ function Ordering() {
     );
     setTransaction(transaction);
     setMessage(json.message);
-    console.log(transaction);
+    console.log("transaction", transaction);
   }
 
   // createTx call, depending on when sol amount is avail
@@ -140,6 +162,7 @@ function Ordering() {
       if (payMethod === "browser") {
         try {
           const tx = await findReference(connection, reference);
+          setAmount(0);
           router.push("/confirmed");
         } catch (e) {
           if (e instanceof FindReferenceError) {
