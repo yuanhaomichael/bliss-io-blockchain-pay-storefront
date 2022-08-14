@@ -18,4 +18,31 @@
 
 - modify makeTransaction API to handle both get and post //
 - update QR code generation //
-- host the api at a custom domain on serverless in AWS Lambda
+- host the api at a custom domain on serverless in AWS Lambda //
+
+---
+
+# loyalty
+- create local script to create the thank you point token //
+- modify calculateAmount in lib to calculate final amount after point discount
+- add logic in makeTransaction.ts to check for thank you points holdings in customer account
+- add discount logic in makeTransaction.ts
+- add file in lib to calculate point rewards
+- add logic to transfer new point awards in makeTransaction.ts 
+- db client connection
+- add logic to write appropriate fields into db in makeTransaction
+
+- local script to mint NFTs
+- add logic to check for NFT coupons against db NFT badge collections in merchant table
+- calculate discount in lib function and add discount logic in makeTransaction.ts
+- function for burning NFT
+- trigger NFT burning in makeTransaction.ts
+- logic to update DB
+
+
+# customer dashboard
+- wallet connection
+- front end
+- display data from wallet account
+- display data from database
+- add a QR and link to customer dashboard after shop purchase

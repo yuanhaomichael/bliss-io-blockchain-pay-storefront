@@ -1,20 +1,25 @@
 import { WalletAdapterNetwork } from "@solana/wallet-adapter-base";
 import calculateAmount from "../../lib/calculateAmount";
+import calculateDiscount from "../../lib/calculateDiscount";
 import {
   createTransferCheckedInstruction,
+  getAccount,
   getAssociatedTokenAddress,
   getMint,
+  getOrCreateAssociatedTokenAccount,
 } from "@solana/spl-token";
 import { NextApiRequest, NextApiResponse } from "next";
 import {
   clusterApiUrl,
   Connection,
+  Keypair,
   PublicKey,
   SystemProgram,
   LAMPORTS_PER_SOL,
   Transaction,
 } from "@solana/web3.js";
 import BigNumber from "bignumber.js";
+import base58 from 'bs58'
 
 export type makeTransactionInputData = {
   customerAccount: string;
@@ -65,7 +70,7 @@ async function post(
     const query = req.query;
     console.log("query,", query);
 
-    let amount = new BigNumber(0);
+    let amountBeforeDiscount = 0;
     let merchantAccount = process.env.MERCHANT_WALLET_ADDR as string;
     let customerAccount = "";
     let txRef = "";
@@ -74,7 +79,7 @@ async function post(
     if (Object.keys(query).length === 0) {
       console.log("browser POST req");
       // parse request for browser requests, whcih have a full req.body
-      amount = parseTotal(req.body.total);
+      amountBeforeDiscount = req.body.total;
       customerAccount = req.body.customerAccount as string;
       txRef = req.body.txRef;
       currency = req.body.currency;
@@ -98,8 +103,8 @@ async function post(
           orderParams
         );
 
-        amount =
-          currency === "usd" ? parseTotal(totalUsd) : parseTotal(totalSol);
+        amountBeforeDiscount =
+          currency === "usd" ? totalUsd : totalSol;
       } catch (e) {
         console.log(e);
       }
@@ -108,9 +113,9 @@ async function post(
       customerAccount = req.body.account;
     }
 
-    console.log("debug:", {
+    console.log("debug tx info:", {
       query,
-      amount,
+      amountBeforeDiscount,
       merchantAccount,
       customerAccount,
       txRef,
@@ -118,7 +123,7 @@ async function post(
       orderParams,
     });
 
-    if (amount.toNumber() === 0) {
+    if (amountBeforeDiscount === 0) {
       res.status(400).json({ error: "can't checkout with total of 0" });
       return;
     }
@@ -156,6 +161,41 @@ async function post(
       merchantAddr
     );
 
+
+    // get Thank You points balance
+    const shopPrivateKey = process.env.MERCHANT_PRIVATE_KEY as string
+    if(!shopPrivateKey) {
+      res.status(500).json({ error : "no shop private key available "})
+    }
+    const shopKeyPair = Keypair.fromSecretKey(base58.decode(shopPrivateKey))
+    const pointsAddr = new PublicKey(process.env.BLOCKSHOP_POINTS_ADDR as string);
+    const customerPointsAccount = await getOrCreateAssociatedTokenAccount(
+      connection,
+      shopKeyPair,
+      pointsAddr,
+      customerAddr
+    ).then((account) => account.address)
+    const merchantPointsAccount = await getAssociatedTokenAddress(
+      pointsAddr,
+      merchantAddr
+    )
+    const {amount: customerPointsBalanceRaw} = await getAccount(connection, customerPointsAccount)
+    const customerPointsBalance = Math.floor(parseInt(customerPointsBalanceRaw.toLocaleString()) / 10)
+    console.log("debug loyalty system:", {
+      customerPointsAccount,
+      merchantPointsAccount,
+      customerPointsBalance
+    });
+    
+    // get which NFT badges is available in the customer account
+    const badges = []
+
+    // calculate discount and rewards, update final amount
+    let {discount, pointsToBurn, nftsToBurn} = await calculateDiscount(amountBeforeDiscount, customerPointsBalance, badges, currency)
+    console.log("debug discounts:", {discount, pointsToBurn, nftsToBurn});
+    
+     
+    const amount = parseTotal(amountBeforeDiscount)
     // create a Transaction
     const newTx = new Transaction({
       recentBlockhash: blockhash,
@@ -206,6 +246,8 @@ async function post(
     const base64SerializedTx = serializedTx.toString("base64");
 
     // insert customerAddr, amount, shopId into DB ...
+
+
 
     // return the transaction
     res.status(200).json({
