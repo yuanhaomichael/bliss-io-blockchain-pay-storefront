@@ -32,7 +32,7 @@
 - db client connection //
 - add logic to write appropriate fields into db in makeTransaction //
 
-- debug wallet confirmation, can't getRecord from component level
+- host endpoint in blockchain-pay-apis to query database info and display confirmation page for mobile
 
 - local script to mint NFTs
 - add logic to check for NFT coupons against db NFT badge collections in merchant table
@@ -43,6 +43,7 @@
 
 # customer dashboard
 
+- new repo for customer dashboard
 - wallet connection
 - front end
 - display data from wallet account

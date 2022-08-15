@@ -20,9 +20,9 @@ import { getSymbolUsdValue } from "../lib/getSymbolUsdValue";
 import BigNumber from "bignumber.js";
 import { ParsedUrlQuery } from "querystring";
 import { MERCHANT, USDC } from "../lib/const";
-import getTmp from "../lib/db-ops/getRecord";
+import axios from "axios";
 
-interface TxSummary {
+export interface TxSummary {
   walletAddr: string;
   merchantWalletAddr: string;
   amountBeforeDiscount: number;
@@ -68,6 +68,7 @@ function Ordering() {
   const [message, setMessage] = useState<string | null>(null);
   const [amountSol, setAmountSol] = useState(0);
   const { amount, setAmount } = useCart();
+  const [validated, setValidated] = useState(false);
 
   console.log("amount in ordering.tsx", amount);
 
@@ -88,6 +89,7 @@ function Ordering() {
     };
     const url = encodeURL(urlParams);
     const qr = createQR(url, 256, "transparent");
+
     if (qrRef.current && amount > 0 && amountSol > 0) {
       qrRef.current.innerHTML = "";
       qr.append(qrRef.current);
@@ -175,6 +177,44 @@ function Ordering() {
     }
   }, [transaction]);
 
+  // dependency array for routing to the confirmation page
+  const depArr =
+    payMethod === "mobile"
+      ? [amount === 0, validated, transactionSummary]
+      : [amount === 0, validated];
+  // fetch tx summary from database when transaction is ready
+  useEffect(() => {
+    const body = {
+      key: reference,
+      keyName: "txRef",
+      table: "transactions",
+    };
+
+    const apiUrl =
+      "https://dxvjjyrby6.execute-api.us-east-1.amazonaws.com/default/getItem";
+
+    axios
+      .post(apiUrl, body, { headers: { "Content-Type": "applications/json" } })
+      .then((res) => {
+        setTransactionSummary(res.data.body.Item);
+        // console.log("tx summary", transactionSummary)
+
+        if (
+          transactionSummary &&
+          transactionSummary?.amountBeforeDiscount > 0 &&
+          validated
+        ) {
+          router.push({
+            pathname: "/confirmed",
+            query: { ...transactionSummary },
+          });
+        }
+      })
+      .catch((e) => {
+        console.error(e);
+      });
+  }, depArr);
+
   // check every 0.3s if the transaction is completed
   useEffect(() => {
     const interval = setInterval(async () => {
@@ -182,13 +222,11 @@ function Ordering() {
         try {
           const tx = await findReference(connection, reference);
           setAmount(0);
-          router.push({
-            pathname: "/confirmed",
-            query: { ...transactionSummary },
-          });
+          console.log("transfer validated");
+          setValidated(true);
         } catch (e) {
           if (e instanceof FindReferenceError) {
-            // console.error("no tx find matching reference")
+            console.error("no tx found matching reference");
             return;
           }
           console.error("unknown error when confirming that you paid");
@@ -201,33 +239,23 @@ function Ordering() {
           });
           const merchant = new PublicKey(MERCHANT);
           const usdcAddr = new PublicKey(USDC);
-          // get Tx Summary from database
-          let txSummary = {} as TxSummary;
-          try {
-            const res = await getTmp(reference);
-            txSummary = JSON.parse(res as string);
-            console.log("txSummary from db:", txSummary);
-          } catch (e) {
-            console.error("getting tx summary from DB failed,", e);
-          }
+
           await validateTransfer(
             connection,
             signatureInfo.signature,
             {
               recipient: merchant,
-              amount: new BigNumber(txSummary?.finalAmount as number),
+              amount: new BigNumber(transactionSummary?.finalAmount as number),
               splToken: payCurrency === "sol" ? undefined : usdcAddr,
               reference,
             },
             { commitment: "confirmed" }
           );
-          setTransactionSummary(txSummary);
-          router.push({
-            pathname: "/confirmed",
-            query: { ...transactionSummary },
-          });
+          console.log("mobile transfer validated");
+          setValidated(true);
+          setAmount(0);
         } catch (e) {
-          console.error(e);
+          console.error("no tx found matching reference and amount");
         }
       }
     }, 500);
@@ -240,7 +268,11 @@ function Ordering() {
     return (
       <div>
         {message ? (
-          <p>{message} Please approve the transaction using your wallet</p>
+          <p>
+            {message} Please approve the transaction using your wallet. (if you
+            paid but confirmation screen does not show, you do not have enough
+            balance in your wallet.)
+          </p>
         ) : (
           <p>
             Creating transaction... (if after a while the wallet modal does not
