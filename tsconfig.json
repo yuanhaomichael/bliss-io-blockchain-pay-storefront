@@ -20,7 +20,9 @@
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
-    "scripts/createPoints.js"
+    "scripts/createPoints.js",
+    "lib/db-ops/putOrCreateRecord.jlib/db-ops/updateRecord.jsrd.js",
+    "lib/db-ops/createDocClient.js"
   ],
   "exclude": ["node_modules"]
 }

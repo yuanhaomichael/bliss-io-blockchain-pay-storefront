@@ -26,11 +26,13 @@
 
 - create local script to create the thank you point token //
 - add logic in makeTransaction.ts to check for thank you points holdings in customer account //
-- add discount logic in makeTransaction.ts <--
+- add discount logic in makeTransaction.ts //
 - add file in lib to calculate point rewards //
-- add logic to transfer new point awards in makeTransaction.ts
-- db client connection
-- add logic to write appropriate fields into db in makeTransaction
+- add logic to transfer new point awards in makeTransaction.ts //
+- db client connection //
+- add logic to write appropriate fields into db in makeTransaction //
+
+- debug wallet confirmation, can't getRecord from component level
 
 - local script to mint NFTs
 - add logic to check for NFT coupons against db NFT badge collections in merchant table

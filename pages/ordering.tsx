@@ -2,6 +2,7 @@ import { useWallet, useConnection } from "@solana/wallet-adapter-react";
 import { Keypair, Transaction, PublicKey } from "@solana/web3.js";
 import { useCart } from "../lib/contexts/CartProvider";
 import { useEffect, useRef, useMemo, useState } from "react";
+import getRecord from "../lib/db-ops/getRecord.js";
 import {
   makeTransactionInputData,
   makeTransactionOutputData,
@@ -18,6 +19,21 @@ import { useRouter } from "next/router";
 import { getSymbolUsdValue } from "../lib/getSymbolUsdValue";
 import BigNumber from "bignumber.js";
 import { ParsedUrlQuery } from "querystring";
+import { MERCHANT, USDC } from "../lib/const";
+import getTmp from '../lib/db-ops/getRecord'
+
+interface TxSummary {
+  walletAddr: string;
+  merchantWalletAddr: string;
+  amountBeforeDiscount: number;
+  discount: number;
+  finalAmount: number;
+  pointsToBurn: number;
+  rewardPoints: number;
+  txRef: string;
+  currency: string;
+  timeStamp: string;
+}
 
 function getOrderParams(query: ParsedUrlQuery): string {
   let res = "";
@@ -32,7 +48,7 @@ function getOrderParams(query: ParsedUrlQuery): string {
 function Ordering() {
   const { publicKey, sendTransaction } = useWallet();
   const { connection } = useConnection();
-  const [transactionSummary, setTransactionSummary] = useState({});
+  const [transactionSummary, setTransactionSummary] = useState({} as TxSummary);
   const router = useRouter();
   const { query } = router;
   let payMethod = "";
@@ -112,7 +128,7 @@ function Ordering() {
     );
     setTransaction(transaction);
     setMessage(json.message);
-    setTransactionSummary(json.transactionSummary);
+    setTransactionSummary(json.transactionSummary as TxSummary);
     console.log("transaction", transaction);
     console.log("tx summary", transactionSummary);
   }
@@ -168,7 +184,7 @@ function Ordering() {
           setAmount(0);
           router.push({
             pathname: "/confirmed",
-            query: { ...transactionSummary, payCurrency },
+            query: { ...transactionSummary },
           });
         } catch (e) {
           if (e instanceof FindReferenceError) {
@@ -183,35 +199,38 @@ function Ordering() {
           const signatureInfo = await findReference(connection, reference, {
             finality: "confirmed",
           });
-          const merchant = new PublicKey(
-            "DknJQ9k5dfA54QwLoiACyB1vPpCTHBXbecHajvyLacvw"
-          );
-          const usdcAddr = new PublicKey(
-            "Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr"
-          );
+          const merchant = new PublicKey(MERCHANT);
+          const usdcAddr = new PublicKey(USDC);
+          // get Tx Summary from database
+          let txSummary = {} as TxSummary;
+          try {
+            const res = await getTmp(reference)
+            txSummary = JSON.parse(res as string)
+            console.log("txSummary from db:", txSummary)
+          } catch (e) {
+            console.error("getting tx summary from DB failed,", e);
+          }
           await validateTransfer(
             connection,
             signatureInfo.signature,
             {
               recipient: merchant,
-              amount:
-                payCurrency === "sol"
-                  ? new BigNumber(amountSol)
-                  : new BigNumber(amount),
+              amount: new BigNumber(txSummary?.finalAmount as number),
               splToken: payCurrency === "sol" ? undefined : usdcAddr,
               reference,
             },
             { commitment: "confirmed" }
           );
+          setTransactionSummary(txSummary);
           router.push({
             pathname: "/confirmed",
-            query: { ...transactionSummary, payCurrency },
+            query: { ...transactionSummary },
           });
         } catch (e) {
           console.error(e);
         }
       }
-    }, 300);
+    }, 500);
     return () => {
       clearInterval(interval);
     };
@@ -241,5 +260,7 @@ function Ordering() {
     return <p>unknown error.</p>;
   }
 }
+
+
 
 export default Ordering;

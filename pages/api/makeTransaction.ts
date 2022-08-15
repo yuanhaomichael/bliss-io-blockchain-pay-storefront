@@ -21,7 +21,14 @@ import {
 } from "@solana/web3.js";
 import BigNumber from "bignumber.js";
 import base58 from "bs58";
-import { shopPointsDecimals } from "../../lib/const";
+import putOrCreateRecord from "../../lib/db-ops/putOrCreateRecord";
+import {
+  shopPointsDecimals,
+  MERCHANT,
+  USDC,
+  BLOCKSHOP_POINTS_ADDR,
+  MERCHANT_PRIVATE_KEY,
+} from "../../lib/const";
 const pointsConversion = shopPointsDecimals === 0 ? 1 : shopPointsDecimals * 10;
 
 export type makeTransactionInputData = {
@@ -75,7 +82,7 @@ async function post(
     console.log("query,", query);
 
     let amountBeforeDiscount = 0;
-    let merchantAccount = process.env.MERCHANT_WALLET_ADDR as string;
+    let merchantAccount = MERCHANT as string;
     let customerAccount = "";
     let txRef = "";
     let currency = "";
@@ -153,7 +160,7 @@ async function post(
     const { blockhash } = await connection.getLatestBlockhash("confirmed");
 
     // get usdc addresses and mint
-    const usdcAddr = new PublicKey(process.env.USDC_ADDR as string);
+    const usdcAddr = new PublicKey(USDC as string);
     const usdcMint = await getMint(connection, new PublicKey(usdcAddr));
     const customerUsdcAddr = await getAssociatedTokenAddress(
       usdcAddr as PublicKey,
@@ -165,14 +172,12 @@ async function post(
     );
 
     // get Thank You points balance
-    const shopPrivateKey = process.env.MERCHANT_PRIVATE_KEY as string;
+    const shopPrivateKey = MERCHANT_PRIVATE_KEY as string;
     if (!shopPrivateKey) {
       res.status(500).json({ error: "no shop private key available " });
     }
     const shopKeyPair = Keypair.fromSecretKey(base58.decode(shopPrivateKey));
-    const pointsAddr = new PublicKey(
-      process.env.BLOCKSHOP_POINTS_ADDR as string
-    );
+    const pointsAddr = new PublicKey(BLOCKSHOP_POINTS_ADDR as string);
     const customerPointsAccount = await getOrCreateAssociatedTokenAccount(
       connection,
       shopKeyPair,
@@ -212,8 +217,8 @@ async function post(
       nftsToBurn,
       amountBeforeDiscount,
     });
-
-    const amount = parseTotal(amountBeforeDiscount - discount);
+    const tmp = amountBeforeDiscount - discount
+    const amount = parseTotal(currency === 'usd' ? Math.round(tmp * 100)/100 : Math.round(tmp*10000)/10000);
     console.log("final amount is", amount.toNumber());
 
     // create a Transaction
@@ -301,19 +306,29 @@ async function post(
     const base64SerializedTx = serializedTx.toString("base64");
 
     // insert customerAddr, amount, shopId into DB ...
+    const transactionSummary = {
+      walletAddr: customerAccount,
+      merchantWalletAddr: merchantAccount,
+      amountBeforeDiscount,
+      discount,
+      finalAmount: amount.toNumber(),
+      pointsToBurn,
+      rewardPoints,
+      txRef,
+      currency,
+      timeStamp: Date.now().toString()
+    };
+    try {
+      await putOrCreateRecord("transactions", transactionSummary);
+    } catch (e) {
+      console.error(e);
+    }
 
     // return the transaction
     res.status(200).json({
       transaction: base64SerializedTx,
       message: "thanks for shopping with us!",
-      transactionSummary: {
-        amountBeforeDiscount,
-        discount,
-        finalAmount: amount.toNumber(),
-        pointsToBurn,
-        rewardPoints,
-        txRef,
-      },
+      transactionSummary,
     });
   } catch (err) {
     res.status(500).json({
