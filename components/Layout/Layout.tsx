@@ -7,7 +7,7 @@ import { WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import Link from "next/link";
 
 export default function Layout({ children }: PropsWithChildren<{}>) {
-  const { amount } = useCart();
+  const { amount, setAmount } = useCart();
   return (
     <div className={styles.container}>
       <Head>

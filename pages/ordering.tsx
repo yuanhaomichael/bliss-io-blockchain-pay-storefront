@@ -2,7 +2,6 @@ import { useWallet, useConnection } from "@solana/wallet-adapter-react";
 import { Keypair, Transaction, PublicKey } from "@solana/web3.js";
 import { useCart } from "../lib/contexts/CartProvider";
 import { useEffect, useRef, useMemo, useState } from "react";
-import getRecord from "../lib/db-ops/getRecord.js";
 import {
   makeTransactionInputData,
   makeTransactionOutputData,
@@ -251,7 +250,10 @@ function Ordering() {
             },
             { commitment: "confirmed" }
           );
-          console.log("mobile transfer validated");
+          console.log(
+            "mobile transfer validated",
+            transactionSummary?.finalAmount as number
+          );
           setValidated(true);
           setAmount(0);
         } catch (e) {
