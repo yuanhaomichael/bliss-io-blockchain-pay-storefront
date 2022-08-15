@@ -217,8 +217,12 @@ async function post(
       nftsToBurn,
       amountBeforeDiscount,
     });
-    const tmp = amountBeforeDiscount - discount
-    const amount = parseTotal(currency === 'usd' ? Math.round(tmp * 100)/100 : Math.round(tmp*10000)/10000);
+    const tmp = amountBeforeDiscount - discount;
+    const amount = parseTotal(
+      currency === "usd"
+        ? Math.round(tmp * 100) / 100
+        : Math.round(tmp * 10000) / 10000
+    );
     console.log("final amount is", amount.toNumber());
 
     // create a Transaction
@@ -316,7 +320,7 @@ async function post(
       rewardPoints,
       txRef,
       currency,
-      timeStamp: Date.now().toString()
+      timeStamp: Date.now().toString(),
     };
     try {
       await putOrCreateRecord("transactions", transactionSummary);

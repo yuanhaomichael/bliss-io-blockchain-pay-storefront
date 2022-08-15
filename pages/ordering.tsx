@@ -20,7 +20,7 @@ import { getSymbolUsdValue } from "../lib/getSymbolUsdValue";
 import BigNumber from "bignumber.js";
 import { ParsedUrlQuery } from "querystring";
 import { MERCHANT, USDC } from "../lib/const";
-import getTmp from '../lib/db-ops/getRecord'
+import getTmp from "../lib/db-ops/getRecord";
 
 interface TxSummary {
   walletAddr: string;
@@ -204,9 +204,9 @@ function Ordering() {
           // get Tx Summary from database
           let txSummary = {} as TxSummary;
           try {
-            const res = await getTmp(reference)
-            txSummary = JSON.parse(res as string)
-            console.log("txSummary from db:", txSummary)
+            const res = await getTmp(reference);
+            txSummary = JSON.parse(res as string);
+            console.log("txSummary from db:", txSummary);
           } catch (e) {
             console.error("getting tx summary from DB failed,", e);
           }
@@ -260,7 +260,5 @@ function Ordering() {
     return <p>unknown error.</p>;
   }
 }
-
-
 
 export default Ordering;
