@@ -2,6 +2,7 @@ import { useWallet, useConnection } from "@solana/wallet-adapter-react";
 import { Keypair, Transaction, PublicKey } from "@solana/web3.js";
 import { useCart } from "../lib/contexts/CartProvider";
 import { useEffect, useRef, useMemo, useState } from "react";
+import getRecord from "../lib/db-ops/getRecord.js";
 import {
   makeTransactionInputData,
   makeTransactionOutputData,
@@ -18,6 +19,21 @@ import { useRouter } from "next/router";
 import { getSymbolUsdValue } from "../lib/getSymbolUsdValue";
 import BigNumber from "bignumber.js";
 import { ParsedUrlQuery } from "querystring";
+import { MERCHANT, USDC } from "../lib/const";
+import axios from "axios";
+
+export interface TxSummary {
+  walletAddr: string;
+  merchantWalletAddr: string;
+  amountBeforeDiscount: number;
+  discount: number;
+  finalAmount: number;
+  pointsToBurn: number;
+  rewardPoints: number;
+  txRef: string;
+  currency: string;
+  timeStamp: string;
+}
 
 function getOrderParams(query: ParsedUrlQuery): string {
   let res = "";
@@ -32,6 +48,7 @@ function getOrderParams(query: ParsedUrlQuery): string {
 function Ordering() {
   const { publicKey, sendTransaction } = useWallet();
   const { connection } = useConnection();
+  const [transactionSummary, setTransactionSummary] = useState({} as TxSummary);
   const router = useRouter();
   const { query } = router;
   let payMethod = "";
@@ -51,6 +68,7 @@ function Ordering() {
   const [message, setMessage] = useState<string | null>(null);
   const [amountSol, setAmountSol] = useState(0);
   const { amount, setAmount } = useCart();
+  const [validated, setValidated] = useState(false);
 
   console.log("amount in ordering.tsx", amount);
 
@@ -71,6 +89,7 @@ function Ordering() {
     };
     const url = encodeURL(urlParams);
     const qr = createQR(url, 256, "transparent");
+
     if (qrRef.current && amount > 0 && amountSol > 0) {
       qrRef.current.innerHTML = "";
       qr.append(qrRef.current);
@@ -111,7 +130,9 @@ function Ordering() {
     );
     setTransaction(transaction);
     setMessage(json.message);
+    setTransactionSummary(json.transactionSummary as TxSummary);
     console.log("transaction", transaction);
+    console.log("tx summary", transactionSummary);
   }
 
   // createTx call, depending on when sol amount is avail
@@ -156,6 +177,44 @@ function Ordering() {
     }
   }, [transaction]);
 
+  // dependency array for routing to the confirmation page
+  const depArr =
+    payMethod === "mobile"
+      ? [amount === 0, validated, transactionSummary]
+      : [amount === 0, validated];
+  // fetch tx summary from database when transaction is ready
+  useEffect(() => {
+    const body = {
+      key: reference,
+      keyName: "txRef",
+      table: "transactions",
+    };
+
+    const apiUrl =
+      "https://dxvjjyrby6.execute-api.us-east-1.amazonaws.com/default/getItem";
+
+    axios
+      .post(apiUrl, body, { headers: { "Content-Type": "applications/json" } })
+      .then((res) => {
+        setTransactionSummary(res.data.body.Item);
+        // console.log("tx summary", transactionSummary)
+
+        if (
+          transactionSummary &&
+          transactionSummary?.amountBeforeDiscount > 0 &&
+          validated
+        ) {
+          router.push({
+            pathname: "/confirmed",
+            query: { ...transactionSummary },
+          });
+        }
+      })
+      .catch((e) => {
+        console.error(e);
+      });
+  }, depArr);
+
   // check every 0.3s if the transaction is completed
   useEffect(() => {
     const interval = setInterval(async () => {
@@ -163,10 +222,11 @@ function Ordering() {
         try {
           const tx = await findReference(connection, reference);
           setAmount(0);
-          router.push("/confirmed");
+          console.log("transfer validated");
+          setValidated(true);
         } catch (e) {
           if (e instanceof FindReferenceError) {
-            // console.error("no tx find matching reference")
+            console.error("no tx found matching reference");
             return;
           }
           console.error("unknown error when confirming that you paid");
@@ -177,44 +237,47 @@ function Ordering() {
           const signatureInfo = await findReference(connection, reference, {
             finality: "confirmed",
           });
-          const merchant = new PublicKey(
-            "DknJQ9k5dfA54QwLoiACyB1vPpCTHBXbecHajvyLacvw"
-          );
-          const usdcAddr = new PublicKey(
-            "Gh9ZwEmdLJ8DscKNTkTqPbNwLNNBjuSzaG9Vp2KGtKJr"
-          );
+          const merchant = new PublicKey(MERCHANT);
+          const usdcAddr = new PublicKey(USDC);
+
           await validateTransfer(
             connection,
             signatureInfo.signature,
             {
               recipient: merchant,
-              amount:
-                payCurrency === "sol"
-                  ? new BigNumber(amountSol)
-                  : new BigNumber(amount),
+              amount: new BigNumber(transactionSummary?.finalAmount as number),
               splToken: payCurrency === "sol" ? undefined : usdcAddr,
               reference,
             },
             { commitment: "confirmed" }
           );
-          router.push("/confirmed");
+          console.log("mobile transfer validated");
+          setValidated(true);
+          setAmount(0);
         } catch (e) {
-          console.error(e);
+          console.error("no tx found matching reference and amount");
         }
       }
-    }, 300);
+    }, 500);
     return () => {
       clearInterval(interval);
     };
-  }, []);
+  }, [transactionSummary]);
 
   if (payMethod === "browser") {
     return (
       <div>
         {message ? (
-          <p>{message} Please approve the transaction using your wallet</p>
+          <p>
+            {message} Please approve the transaction using your wallet. (if you
+            paid but confirmation screen does not show, you do not have enough
+            balance in your wallet.)
+          </p>
         ) : (
-          <p>Creating transaction...</p>
+          <p>
+            Creating transaction... (if after a while the wallet modal does not
+            pop up, there could be an error...)
+          </p>
         )}
       </div>
     );

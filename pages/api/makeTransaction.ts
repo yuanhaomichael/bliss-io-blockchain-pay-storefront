@@ -1,20 +1,35 @@
 import { WalletAdapterNetwork } from "@solana/wallet-adapter-base";
 import calculateAmount from "../../lib/calculateAmount";
+import calculateDiscount from "../../lib/calculateDiscount";
+import calculateRewardPoints from "../../lib/calculateRewardPoints";
 import {
   createTransferCheckedInstruction,
+  getAccount,
   getAssociatedTokenAddress,
   getMint,
+  getOrCreateAssociatedTokenAccount,
 } from "@solana/spl-token";
 import { NextApiRequest, NextApiResponse } from "next";
 import {
   clusterApiUrl,
   Connection,
+  Keypair,
   PublicKey,
   SystemProgram,
   LAMPORTS_PER_SOL,
   Transaction,
 } from "@solana/web3.js";
 import BigNumber from "bignumber.js";
+import base58 from "bs58";
+import putOrCreateRecord from "../../lib/db-ops/putOrCreateRecord";
+import {
+  shopPointsDecimals,
+  MERCHANT,
+  USDC,
+  BLOCKSHOP_POINTS_ADDR,
+  MERCHANT_PRIVATE_KEY,
+} from "../../lib/const";
+const pointsConversion = shopPointsDecimals === 0 ? 1 : shopPointsDecimals * 10;
 
 export type makeTransactionInputData = {
   customerAccount: string;
@@ -26,6 +41,7 @@ export type makeTransactionInputData = {
 export type makeTransactionOutputData = {
   transaction: string;
   message: string;
+  transactionSummary: object;
 };
 
 type errorOutput = {
@@ -65,8 +81,8 @@ async function post(
     const query = req.query;
     console.log("query,", query);
 
-    let amount = new BigNumber(0);
-    let merchantAccount = process.env.MERCHANT_WALLET_ADDR as string;
+    let amountBeforeDiscount = 0;
+    let merchantAccount = MERCHANT as string;
     let customerAccount = "";
     let txRef = "";
     let currency = "";
@@ -74,7 +90,7 @@ async function post(
     if (Object.keys(query).length === 0) {
       console.log("browser POST req");
       // parse request for browser requests, whcih have a full req.body
-      amount = parseTotal(req.body.total);
+      amountBeforeDiscount = req.body.total;
       customerAccount = req.body.customerAccount as string;
       txRef = req.body.txRef;
       currency = req.body.currency;
@@ -98,8 +114,7 @@ async function post(
           orderParams
         );
 
-        amount =
-          currency === "usd" ? parseTotal(totalUsd) : parseTotal(totalSol);
+        amountBeforeDiscount = currency === "usd" ? totalUsd : totalSol;
       } catch (e) {
         console.log(e);
       }
@@ -108,9 +123,9 @@ async function post(
       customerAccount = req.body.account;
     }
 
-    console.log("debug:", {
+    console.log("debug tx info:", {
       query,
-      amount,
+      amountBeforeDiscount,
       merchantAccount,
       customerAccount,
       txRef,
@@ -118,7 +133,7 @@ async function post(
       orderParams,
     });
 
-    if (amount.toNumber() === 0) {
+    if (amountBeforeDiscount === 0) {
       res.status(400).json({ error: "can't checkout with total of 0" });
       return;
     }
@@ -145,7 +160,7 @@ async function post(
     const { blockhash } = await connection.getLatestBlockhash("confirmed");
 
     // get usdc addresses and mint
-    const usdcAddr = new PublicKey(process.env.USDC_ADDR as string);
+    const usdcAddr = new PublicKey(USDC as string);
     const usdcMint = await getMint(connection, new PublicKey(usdcAddr));
     const customerUsdcAddr = await getAssociatedTokenAddress(
       usdcAddr as PublicKey,
@@ -156,10 +171,96 @@ async function post(
       merchantAddr
     );
 
+    // get Thank You points balance
+    const shopPrivateKey = MERCHANT_PRIVATE_KEY as string;
+    if (!shopPrivateKey) {
+      res.status(500).json({ error: "no shop private key available " });
+    }
+    const shopKeyPair = Keypair.fromSecretKey(base58.decode(shopPrivateKey));
+    const pointsAddr = new PublicKey(BLOCKSHOP_POINTS_ADDR as string);
+    const customerPointsAccount = await getOrCreateAssociatedTokenAccount(
+      connection,
+      shopKeyPair,
+      pointsAddr,
+      customerAddr
+    ).then((account) => account.address);
+    const merchantPointsAccount = await getAssociatedTokenAddress(
+      pointsAddr,
+      merchantAddr
+    );
+    const { amount: customerPointsBalanceRaw } = await getAccount(
+      connection,
+      customerPointsAccount
+    );
+    const customerPointsBalance = Math.floor(
+      parseInt(customerPointsBalanceRaw.toLocaleString()) / pointsConversion
+    );
+    console.log("debug loyalty system:", {
+      customerPointsAccount,
+      merchantPointsAccount,
+      customerPointsBalance,
+    });
+
+    // get which NFT badges is available in the customer account
+    const badges = [];
+
+    // calculate discount and rewards, update final amount
+    let { discount, pointsToBurn, nftsToBurn } = await calculateDiscount(
+      amountBeforeDiscount,
+      customerPointsBalance,
+      badges,
+      currency
+    );
+    console.log("debug discounts:", {
+      discount,
+      pointsToBurn,
+      nftsToBurn,
+      amountBeforeDiscount,
+    });
+    const tmp = amountBeforeDiscount - discount;
+    const amount = parseTotal(
+      currency === "usd"
+        ? Math.round(tmp * 100) / 100
+        : Math.round(tmp * 10000) / 10000
+    );
+    console.log("final amount is", amount.toNumber());
+
     // create a Transaction
     const newTx = new Transaction({
       recentBlockhash: blockhash,
       feePayer: customerAddr,
+    });
+
+    // shop recycling users' Thank you points from user's account (sending to merchant account)
+    const burnIx = createTransferCheckedInstruction(
+      customerPointsAccount,
+      pointsAddr,
+      merchantPointsAccount,
+      customerAddr,
+      pointsToBurn * pointsConversion,
+      1
+    );
+
+    // shop issuing Thank You points back to customer
+    const rewardPoints = await calculateRewardPoints(
+      amountBeforeDiscount,
+      discount,
+      currency
+    );
+    console.log("reward points", rewardPoints);
+
+    const rewardIx = createTransferCheckedInstruction(
+      merchantPointsAccount,
+      pointsAddr,
+      customerPointsAccount,
+      merchantAddr,
+      rewardPoints * pointsConversion,
+      1
+    );
+    rewardIx.keys.push({
+      pubkey: merchantAddr,
+      isSigner: true,
+      isWritable: false,
     });
 
     if (currency === "sol") {
@@ -177,7 +278,7 @@ async function post(
         isWritable: false,
       });
 
-      newTx.add(transferIx);
+      newTx.add(transferIx, burnIx, rewardIx);
     } else {
       // Create the instruction to send USDC from the buyer to the shop
       const transferIx = createTransferCheckedInstruction(
@@ -196,8 +297,11 @@ async function post(
         isWritable: false,
       });
 
-      newTx.add(transferIx);
+      newTx.add(transferIx, burnIx, rewardIx);
     }
+
+    // must partially sign the tx so that shop can auto send the points to customer (as discount)
+    newTx.partialSign(shopKeyPair);
 
     const serializedTx = newTx.serialize({
       requireAllSignatures: false,
@@ -206,11 +310,29 @@ async function post(
     const base64SerializedTx = serializedTx.toString("base64");
 
     // insert customerAddr, amount, shopId into DB ...
+    const transactionSummary = {
+      walletAddr: customerAccount,
+      merchantWalletAddr: merchantAccount,
+      amountBeforeDiscount,
+      discount,
+      finalAmount: amount.toNumber(),
+      pointsToBurn,
+      rewardPoints,
+      txRef,
+      currency,
+      timeStamp: Date.now().toString(),
+    };
+    try {
+      await putOrCreateRecord("transactions", transactionSummary);
+    } catch (e) {
+      console.error(e);
+    }
 
     // return the transaction
     res.status(200).json({
       transaction: base64SerializedTx,
-      message: "Thank you for your purchase!",
+      message: "thanks for shopping with us!",
+      transactionSummary,
     });
   } catch (err) {
     res.status(500).json({
